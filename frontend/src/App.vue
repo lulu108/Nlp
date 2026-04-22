@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from "vue";
+import SingleTextPage from "./pages/SingleTextPage.vue";
+import ClusterPage from "./pages/ClusterPage.vue";
 
 const activeTab = ref("single");
 </script>
@@ -30,13 +32,11 @@ const activeTab = ref("single");
       </div>
 
       <section v-if="activeTab === 'single'" class="panel">
-        <h2>单文本分析页面</h2>
-        <p>这里是占位区域，后续接入分词、NER、分类模块。</p>
+        <SingleTextPage />
       </section>
 
       <section v-else class="panel">
-        <h2>聚类分析页面</h2>
-        <p>这里是占位区域，后续接入文本聚类与可视化模块。</p>
+        <ClusterPage />
       </section>
     </main>
   </div>

@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from flask import Flask
+from flask_cors import CORS
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -18,6 +19,7 @@ from backend.routes.tokenize import tokenize_bp
 
 def create_app() -> Flask:
 	app = Flask(__name__)
+	CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 
 	app.register_blueprint(tokenize_bp)
 	app.register_blueprint(ner_bp)
