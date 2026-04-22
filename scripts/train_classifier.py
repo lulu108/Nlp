@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import joblib
@@ -12,6 +13,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from algorithms.classifier_preprocessing import build_classifier_text
+
 DEFAULT_DATA_PATH = ROOT_DIR / "data" / "train" / "classify_train.csv"
 DEFAULT_MODEL_DIR = ROOT_DIR / "models" / "classifier"
 DEFAULT_VECTORIZER_PATH = DEFAULT_MODEL_DIR / "tfidf_vectorizer.pkl"
@@ -30,11 +36,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-iter", type=int, default=5000)
     return parser.parse_args()
 
-
-def normalize_text(text: str) -> str:
-    return " ".join(str(text).strip().split())
-
-
 def load_training_dataframe(data_path: Path) -> pd.DataFrame:
     if not data_path.exists():
         raise FileNotFoundError(
@@ -50,12 +51,15 @@ def load_training_dataframe(data_path: Path) -> pd.DataFrame:
     if "text" not in df.columns:
         raise ValueError("Training data must include 'text' column")
 
-    text_series = df["text"].astype(str)
+    text_series = df["text"].fillna("").astype(str)
     if "title" in df.columns:
-        text_series = df["title"].fillna("").astype(str) + " " + text_series
+        title_series = df["title"].fillna("").astype(str)
+        processed_texts = [build_classifier_text(title, text) for title, text in zip(title_series, text_series)]
+    else:
+        processed_texts = text_series.map(build_classifier_text)
 
     out = pd.DataFrame({
-        "text": text_series.map(normalize_text),
+        "text": processed_texts,
         "label": df["label"].astype(str).str.strip(),
     })
 
@@ -105,6 +109,7 @@ def train(args: argparse.Namespace) -> tuple[TfidfVectorizer, CalibratedClassifi
     vectorizer = TfidfVectorizer(
         max_features=args.max_features,
         ngram_range=(1, args.ngram_max),
+        token_pattern=r"(?u)\b\w+\b",
     )
 
     X_train = vectorizer.fit_transform(train_df["text"])

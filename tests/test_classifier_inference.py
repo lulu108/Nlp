@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import joblib
+import pandas as pd
 import pytest
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import LinearSVC
 
 from algorithms import classifier
+from algorithms.classifier_preprocessing import build_classifier_text, preprocess_classifier_text
+from scripts.train_classifier import load_training_dataframe
 
 
 def test_load_classifier_artifacts_missing_files(tmp_path, monkeypatch):
@@ -18,31 +18,76 @@ def test_load_classifier_artifacts_missing_files(tmp_path, monkeypatch):
         classifier.load_classifier_artifacts(force_reload=True)
 
 
+def test_preprocess_classifier_text_segments_chinese_text():
+    processed = preprocess_classifier_text("\u82af\u7247\u6280\u672f\u521b\u65b0\u6b63\u5728\u52a0\u901f")
+
+    assert processed
+    assert " " in processed
+    assert "\u82af\u7247" in processed
+    assert "\u6280\u672f" in processed
+
+
+def test_load_training_dataframe_combines_title_and_applies_preprocessing(tmp_path):
+    data_path = tmp_path / "classify_train.csv"
+    pd.DataFrame(
+        {
+            "title": [
+                "\u82af\u7247\u53d1\u5e03\u4f1a",
+                "\u79d1\u6280\u5cf0\u4f1a",
+                "\u7403\u961f\u8bad\u7ec3",
+                "\u8054\u8d5b\u524d\u77bb",
+            ],
+            "text": [
+                "\u4eba\u5de5\u667a\u80fd\u82af\u7247\u6280\u672f\u518d\u6b21\u5347\u7ea7",
+                "\u7b97\u6cd5\u6a21\u578b\u5728\u65b0\u5e73\u53f0\u5b8c\u6210\u90e8\u7f72",
+                "\u8054\u8d5b\u51b3\u8d5b\u524d\u7403\u961f\u52a0\u7d27\u5907\u6218",
+                "\u524d\u950b\u7403\u5458\u5728\u70ed\u8eab\u8d5b\u4e2d\u72b6\u6001\u706b\u70ed",
+            ],
+            "label": ["\u79d1\u6280", "\u79d1\u6280", "\u4f53\u80b2", "\u4f53\u80b2"],
+        }
+    ).to_csv(data_path, index=False, encoding="utf-8-sig")
+
+    out = load_training_dataframe(data_path)
+
+    assert out.loc[0, "text"] == build_classifier_text(
+        "\u82af\u7247\u53d1\u5e03\u4f1a",
+        "\u4eba\u5de5\u667a\u80fd\u82af\u7247\u6280\u672f\u518d\u6b21\u5347\u7ea7",
+    )
+    assert out.loc[2, "text"] == build_classifier_text(
+        "\u7403\u961f\u8bad\u7ec3",
+        "\u8054\u8d5b\u51b3\u8d5b\u524d\u7403\u961f\u52a0\u7d27\u5907\u6218",
+    )
+    assert "\u82af\u7247" in out.loc[0, "text"]
+    assert " " in out.loc[0, "text"]
+
+
 def test_classify_text_returns_label_and_confidence(tmp_path, monkeypatch):
-    texts = ["芯片和算法发展", "人工智能技术升级", "球队获得冠军", "联赛比赛很激烈"]
-    labels = ["科技", "科技", "体育", "体育"]
+    class FakeVectorizer:
+        def __init__(self) -> None:
+            self.last_input: list[str] | None = None
 
-    vectorizer = TfidfVectorizer()
-    x = vectorizer.fit_transform(texts)
+        def transform(self, texts):
+            self.last_input = list(texts)
+            return [[1.0]]
 
-    model = CalibratedClassifierCV(LinearSVC(max_iter=5000), method="sigmoid", cv=2)
-    model.fit(x, labels)
+    class FakeModel:
+        def predict(self, features):
+            return ["\u79d1\u6280"]
 
-    vec_path = tmp_path / "tfidf_vectorizer.pkl"
-    model_path = tmp_path / "svm_model.pkl"
-    joblib.dump(vectorizer, vec_path)
-    joblib.dump(model, model_path)
+        def predict_proba(self, features):
+            return [[0.9, 0.1]]
 
-    monkeypatch.setattr(classifier, "VECTORIZER_PATH", vec_path)
-    monkeypatch.setattr(classifier, "MODEL_PATH", model_path)
-    monkeypatch.setattr(classifier, "_ARTIFACT_CACHE", None)
+    vectorizer = FakeVectorizer()
+    model = FakeModel()
+    monkeypatch.setattr(classifier, "load_classifier_artifacts", lambda force_reload=False: (vectorizer, model))
 
-    label, confidence = classifier.classify_text("芯片技术创新正在加速")
+    raw_text = "\u82af\u7247\u6280\u672f\u521b\u65b0\u6b63\u5728\u52a0\u901f"
+    label, confidence = classifier.classify_text(raw_text)
 
     assert isinstance(label, str)
-    assert label in {"科技", "体育"}
-    assert isinstance(confidence, float)
-    assert 0.0 <= confidence <= 1.0
+    assert label == "\u79d1\u6280"
+    assert confidence == 0.9
+    assert vectorizer.last_input == [preprocess_classifier_text(raw_text)]
 
 
 def test_classify_text_empty_raises_value_error():

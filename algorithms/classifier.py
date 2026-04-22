@@ -4,6 +4,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+from algorithms.classifier_preprocessing import preprocess_classifier_text
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -12,11 +13,6 @@ VECTORIZER_PATH = MODEL_DIR / "tfidf_vectorizer.pkl"
 MODEL_PATH = MODEL_DIR / "svm_model.pkl"
 
 _ARTIFACT_CACHE: tuple[object, object] | None = None
-
-
-def _normalize_text(text: str) -> str:
-    return " ".join(text.strip().split())
-
 
 def load_classifier_artifacts(force_reload: bool = False) -> tuple[object, object]:
     global _ARTIFACT_CACHE
@@ -57,7 +53,7 @@ def _confidence_from_decision(decision: np.ndarray) -> float:
 
 
 def classify_text(text: str) -> tuple[str, float]:
-    value = _normalize_text(text)
+    value = preprocess_classifier_text(text)
     if not value:
         raise ValueError("text cannot be empty")
 
