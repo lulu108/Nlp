@@ -43,3 +43,32 @@ def test_classify_text_returns_label_and_confidence(tmp_path, monkeypatch):
     assert label in {"科技", "体育"}
     assert isinstance(confidence, float)
     assert 0.0 <= confidence <= 1.0
+
+
+def test_classify_text_empty_raises_value_error():
+    with pytest.raises(ValueError):
+        classifier.classify_text("   \n\t  ")
+
+
+def test_load_classifier_artifacts_force_reload(tmp_path, monkeypatch):
+    vec_path = tmp_path / "tfidf_vectorizer.pkl"
+    model_path = tmp_path / "svm_model.pkl"
+
+    persisted_vectorizer = {"name": "persisted_vectorizer"}
+    persisted_model = {"name": "persisted_model"}
+    joblib.dump(persisted_vectorizer, vec_path)
+    joblib.dump(persisted_model, model_path)
+
+    cached_artifacts = ("cached_vectorizer", "cached_model")
+
+    monkeypatch.setattr(classifier, "VECTORIZER_PATH", vec_path)
+    monkeypatch.setattr(classifier, "MODEL_PATH", model_path)
+    monkeypatch.setattr(classifier, "_ARTIFACT_CACHE", cached_artifacts)
+
+    no_reload = classifier.load_classifier_artifacts(force_reload=False)
+    assert no_reload == cached_artifacts
+
+    reloaded = classifier.load_classifier_artifacts(force_reload=True)
+    assert reloaded != cached_artifacts
+    assert reloaded[0] == persisted_vectorizer
+    assert reloaded[1] == persisted_model
