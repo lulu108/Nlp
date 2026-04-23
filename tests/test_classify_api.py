@@ -34,7 +34,24 @@ def test_classify_api_bad_request():
     assert "message" in data
 
 
-def test_classify_api_server_error(monkeypatch):
+def test_classify_api_value_error(monkeypatch):
+    def fake_classify(_text: str):
+        raise ValueError("text cannot be empty")
+
+    monkeypatch.setattr("backend.routes.classify.classify", fake_classify)
+
+    app = create_app()
+    client = app.test_client()
+
+    resp = client.post("/api/classify", json={"text": "\u4eba\u5de5\u667a\u80fd\u63a8\u52a8\u79d1\u6280\u53d1\u5c55"})
+
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["success"] is False
+    assert data["message"] == "text cannot be empty"
+
+
+def test_classify_api_file_not_found_error(monkeypatch):
     def fake_classify(_text: str):
         raise FileNotFoundError("model artifacts missing")
 
@@ -49,3 +66,21 @@ def test_classify_api_server_error(monkeypatch):
     data = resp.get_json()
     assert data["success"] is False
     assert "message" in data
+    assert "model artifacts missing" in data["message"]
+
+
+def test_classify_api_internal_server_error(monkeypatch):
+    def fake_classify(_text: str):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("backend.routes.classify.classify", fake_classify)
+
+    app = create_app()
+    client = app.test_client()
+
+    resp = client.post("/api/classify", json={"text": "\u4eba\u5de5\u667a\u80fd\u63a8\u52a8\u79d1\u6280\u53d1\u5c55"})
+
+    assert resp.status_code == 500
+    data = resp.get_json()
+    assert data["success"] is False
+    assert data["message"] == "internal server error"

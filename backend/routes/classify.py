@@ -20,5 +20,9 @@ def classify_route():
 	try:
 		label, confidence = classify(text or "")
 		return success_response({"label": label, "confidence": confidence})
+	except ValueError as exc:
+		return error_response(str(exc), 400)
+	except FileNotFoundError as exc:
+		return error_response(str(exc), 500)
 	except Exception:
 		return error_response("internal server error", 500)

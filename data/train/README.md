@@ -20,3 +20,25 @@ text,label
 ```
 
 建议每个类别至少准备 20 条以上样本，以获得更稳定的效果。
+
+## Training Command
+
+Run the classifier training script from the `P4/` directory:
+
+```bash
+python scripts/train_classifier.py --data-path data/train/classify_train.csv
+```
+
+Required columns:
+
+- `text`
+- `label`
+
+Optional columns:
+
+- `title`
+
+The training script saves artifacts to:
+
+- `models/classifier/tfidf_vectorizer.pkl`
+- `models/classifier/svm_model.pkl`

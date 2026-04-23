@@ -345,3 +345,15 @@ pytest
 - 构建完整可运行系统
 - 提高界面清晰度和结果可视化效果
 - 便于实验过程说明与报告撰写
+ 
+## Classifier Training Note
+
+Before using `POST /api/classify`, train the classifier artifacts once from the `P4/` directory:
+
+```bash
+python scripts/train_classifier.py --data-path data/train/classify_train.csv
+```
+
+This command writes the required files to `models/classifier/tfidf_vectorizer.pkl` and `models/classifier/svm_model.pkl`.
+
+If you see older notes mentioning `classifier_model.pkl`, use `svm_model.pkl` instead.
