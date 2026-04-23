@@ -345,15 +345,46 @@ pytest
 - 构建完整可运行系统
 - 提高界面清晰度和结果可视化效果
 - 便于实验过程说明与报告撰写
- 
-## Classifier Training Note
 
-Before using `POST /api/classify`, train the classifier artifacts once from the `P4/` directory:
+## 分类器训练说明
+
+使用 `POST /api/classify` 之前，需要先在 `P4/` 目录下训练并生成分类模型文件：
 
 ```bash
 python scripts/train_classifier.py --data-path data/train/classify_train.csv
 ```
 
-This command writes the required files to `models/classifier/tfidf_vectorizer.pkl` and `models/classifier/svm_model.pkl`.
+该命令会生成接口运行所需的两个文件：
 
-If you see older notes mentioning `classifier_model.pkl`, use `svm_model.pkl` instead.
+- `models/classifier/tfidf_vectorizer.pkl`
+- `models/classifier/svm_model.pkl`
+
+如果旧说明中出现 `classifier_model.pkl`，请以当前实际使用的 `svm_model.pkl` 为准。
+
+## 聚类模块说明
+
+`POST /api/cluster` 当前使用真实文本聚类流程：
+
+1. 复用中文文本预处理逻辑
+2. 使用 TF-IDF 提取文本特征
+3. 使用 KMeans 进行聚类
+4. 使用 PCA 将向量降到二维，便于前端可视化
+
+接口返回结构保持不变：
+
+```json
+{
+  "success": true,
+  "points": [{ "title": "doc1", "x": 0.12, "y": -0.45, "cluster": 0 }]
+}
+```
+
+输入要求：
+
+- 至少提供两篇文档
+- 每篇文档必须包含非空的 `title` 和 `text`
+- 如果文档中包含 `label` 等额外字段，聚类模块会忽略这些字段
+- `cluster_count` 为可选参数，默认值为 `2`
+- 如果传入 `cluster_count`，必须满足 `2 <= cluster_count <= 有效文档数量`
+
+演示时也可以从 `data/train/classify_train.csv` 中抽取若干行，将其中的文本内容作为聚类输入。

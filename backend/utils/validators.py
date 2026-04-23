@@ -50,5 +50,7 @@ def validate_cluster_payload(
 			return False, None, None, "cluster_count must be an integer"
 		if cluster_count < 2:
 			return False, None, None, "cluster_count must be >= 2"
+		if cluster_count > len(normalized_docs):
+			return False, None, None, "cluster_count must be <= document count"
 
 	return True, normalized_docs, cluster_count, None

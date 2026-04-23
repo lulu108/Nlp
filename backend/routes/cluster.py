@@ -20,5 +20,7 @@ def cluster_route():
 	try:
 		points = cluster(documents or [], cluster_count)
 		return success_response({"points": points})
+	except ValueError as exc:
+		return error_response(str(exc), 400)
 	except Exception:
 		return error_response("internal server error", 500)

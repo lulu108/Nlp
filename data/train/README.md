@@ -42,3 +42,7 @@ The training script saves artifacts to:
 
 - `models/classifier/tfidf_vectorizer.pkl`
 - `models/classifier/svm_model.pkl`
+
+## Clustering Demo Reuse
+
+Rows from `classify_train.csv` can also be sampled for clustering demos. When these rows are reused with `/api/cluster`, the clustering module only uses text content and ignores the `label` column.

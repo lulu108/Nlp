@@ -306,3 +306,20 @@
 - `clusterDocuments(documents)`
 
 这样更利于维护和复用。
+
+## 聚类实现说明
+
+`POST /api/cluster` 返回由真实聚类流程生成的结果，处理步骤如下：
+
+1. 中文文本预处理
+2. TF-IDF 向量化
+3. KMeans 聚类
+4. PCA 二维降维
+
+输入规则：
+
+- `documents` 至少包含两篇文档
+- 每篇文档必须包含非空的 `title` 和 `text`
+- 如果存在 `label` 等额外字段，聚类模块会忽略
+- `cluster_count` 为可选参数，默认值为 `2`
+- 如果传入 `cluster_count`，必须满足 `2 <= cluster_count <= 有效文档数量`
