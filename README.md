@@ -389,3 +389,17 @@ python scripts/train_classifier.py --data-path data/train/classify_train.csv
 
 演示时也可以从 `data/train/classify_train.csv` 中抽取若干行，将其中的文本内容作为聚类输入。
 
+## 聚类离线评估示例
+
+如果希望基于带标签数据离线评估当前聚类流程，可以在 `P4/` 目录下运行：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv
+```
+
+也可以显式指定聚类数量：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv --cluster-count 4
+```
+
