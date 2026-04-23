@@ -1,4 +1,4 @@
-# P4 - 自然语言处理应用程序设计
+﻿# P4 - 自然语言处理应用程序设计
 
 ## 1. 项目简介
 
@@ -69,7 +69,7 @@ P4/
 ├─ models/
 │  ├─ classifier/
 │  │  ├─ tfidf_vectorizer.pkl
-│  │  └─ classifier_model.pkl
+│  │  └─ svm_model.pkl
 │  └─ cache/
 ├─ algorithms/
 │  ├─ __init__.py
@@ -388,3 +388,4 @@ python scripts/train_classifier.py --data-path data/train/classify_train.csv
 - 如果传入 `cluster_count`，必须满足 `2 <= cluster_count <= 有效文档数量`
 
 演示时也可以从 `data/train/classify_train.csv` 中抽取若干行，将其中的文本内容作为聚类输入。
+
