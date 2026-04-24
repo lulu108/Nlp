@@ -252,6 +252,9 @@ The UI should contain:
 Avoid overly complex animation or decorative design.
 Prioritize clarity, usability, and screenshot-friendliness.
 
+For Vue 3 visual optimization, component splitting, result presentation, and report screenshot friendly layout work, also follow `.codex/skills/p4-frontend-design-system/SKILL.md`.
+Treat that skill as the detailed frontend guide for updates inside `frontend/src`.
+
 ## 10. Testing Rules
 
 At minimum, the project should include:
