@@ -403,3 +403,39 @@ python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv
 python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv --cluster-count 4
 ```
 
+如果希望比较多组 TF-IDF + KMeans 参数，可以运行网格搜索：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv --grid-search
+```
+
+也可以缩小搜索范围，例如：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv --grid-search --cluster-counts 3,4 --max-features-list 2000,5000 --ngram-ranges 1-1,1-2 --top-n 5
+```
+
+如果希望比较基线方案与 SVD 降维后的聚类效果，可以运行：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv --compare-svd
+```
+
+单次评估中启用 SVD 的示例：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/classify_train.csv --use-svd --svd-components 100
+```
+
+如果希望只在 `体育 / 教育 / 财经` 三类子集上做聚类实验，可以先生成子集：
+
+```bash
+python scripts/prepare_cluster_subset.py
+```
+
+然后运行：
+
+```bash
+python scripts/evaluate_cluster.py --data-path data/train/cluster_train_sports_edu_fin.csv --cluster-count 3
+```
+
