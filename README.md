@@ -202,6 +202,7 @@ P4/
 - Node.js 18+
 - pip
 - npm
+- HanLP 依赖会随 `requirements.txt` 一并安装，用于中文 NER 基线
 
 ---
 
@@ -214,6 +215,11 @@ P4/
 ```bash
 pip install -r requirements.txt
 ```
+
+说明：
+
+- `requirements.txt` 已包含 `hanlp`；如果你之前已经安装过旧版本依赖，重新执行一次 `pip install -r requirements.txt` 即可
+- 首次调用 NER 模块时，HanLP 可能会自动下载预训练模型文件到本地缓存，因此第一次加载会比后续请求更慢
 
 2. 启动 Flask 后端
 
@@ -438,4 +444,3 @@ python scripts/prepare_cluster_subset.py
 ```bash
 python scripts/evaluate_cluster.py --data-path data/train/cluster_train_sports_edu_fin.csv --cluster-count 3
 ```
-
