@@ -5,18 +5,21 @@ import ClusterChart from "../components/ClusterChart.vue";
 import { getClusterColor } from "../constants/clusterPalette";
 
 const SAMPLE_INPUT = [
-  "科技新闻::人工智能与芯片技术持续推动科技产业升级。",
-  "教育观察::高校课程改革强调实践能力与创新训练。",
-  "财经简讯::资本市场关注新能源企业的季度财报表现。",
-  "科技评论::大模型应用正在重塑搜索与办公协作方式。",
+  "科技观察::北京人工智能实验室发布多模态模型评测结果，研究团队表示中文理解能力继续提升。",
+  "科技产业::上海芯片企业公布新一代算力平台，计划服务自动驾驶与智能制造场景。",
+  "财经快讯::多家基金公司调整新能源板块持仓结构，市场关注季度财报与现金流表现。",
+  "资本市场::券商分析师认为消费与高端制造板块有望在下阶段获得更多资金关注。",
+  "体育赛报::中国女排在国际邀请赛中连胜两场，主教练强调拦网和一传质量明显提高。",
+  "体育评论::杭州马拉松吸引大量选手参赛，赛事组织与城市服务获得跑者积极评价。",
 ].join("\n");
 
 const rawInput = ref("");
-const clusterCount = ref("");
+const clusterCount = ref("3");
 const loading = ref(false);
 const error = ref("");
 const points = ref([]);
 const hasSubmitted = ref(false);
+const copyMessage = ref("");
 
 function parseLinesToDocuments(text) {
   return text
@@ -53,7 +56,8 @@ const parsedPreview = computed(() => {
 
 const documentCount = computed(() => parsedPreview.value.length);
 const previewRows = computed(() =>
-  parsedPreview.value.map((item) => ({
+  parsedPreview.value.map((item, index) => ({
+    index: index + 1,
     title: item.title,
     summary: item.text.length > 48 ? `${item.text.slice(0, 48)}...` : item.text,
   })),
@@ -90,19 +94,65 @@ function fillExample() {
   rawInput.value = SAMPLE_INPUT;
   clusterCount.value = "3";
   error.value = "";
+  copyMessage.value = "";
 }
 
 function clearAll() {
   rawInput.value = "";
-  clusterCount.value = "";
+  clusterCount.value = "3";
   error.value = "";
   points.value = [];
   hasSubmitted.value = false;
+  copyMessage.value = "";
+}
+
+function buildClusterSummary() {
+  return [
+    "P4 聚类摘要",
+    "",
+    ...clusterGroups.value.map((group) => [
+      `簇 ${group.cluster}（${group.count} 篇）`,
+      ...group.titles.map((title) => `- ${title}`),
+      "",
+    ]).flat(),
+  ]
+    .join("\n")
+    .trim();
+}
+
+async function copyClusterSummary() {
+  if (!hasResults.value) {
+    copyMessage.value = "当前没有可复制的聚类摘要。";
+    return;
+  }
+
+  const summaryText = buildClusterSummary();
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(summaryText);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = summaryText;
+      textarea.setAttribute("readonly", "readonly");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+
+    copyMessage.value = "聚类摘要已复制到剪贴板。";
+  } catch {
+    copyMessage.value = "复制失败，请稍后重试。";
+  }
 }
 
 async function handleCluster() {
   error.value = "";
   points.value = [];
+  copyMessage.value = "";
 
   let documents;
   try {
@@ -213,12 +263,14 @@ async function handleCluster() {
           <table class="preview-table">
             <thead>
               <tr>
+                <th>序号</th>
                 <th>标题</th>
                 <th>正文摘要</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="row in previewRows" :key="`${row.title}-${row.summary}`">
+                <td>{{ row.index }}</td>
                 <td>{{ row.title }}</td>
                 <td>{{ row.summary }}</td>
               </tr>
@@ -269,7 +321,17 @@ async function handleCluster() {
         <aside class="summary-card">
           <div class="summary-head">
             <h3>聚类摘要</h3>
-            <span class="meta-pill">{{ hasResults ? `${points.length} 个点` : "等待结果" }}</span>
+            <div class="summary-actions">
+              <span class="meta-pill">{{ hasResults ? `${points.length} 个点` : "等待结果" }}</span>
+              <button
+                class="summary-copy-btn"
+                type="button"
+                :disabled="loading || !hasResults"
+                @click="copyClusterSummary"
+              >
+                复制聚类摘要
+              </button>
+            </div>
           </div>
 
           <div class="summary-stats">
@@ -286,8 +348,9 @@ async function handleCluster() {
           <p v-if="!hasResults" class="summary-empty">
             聚类完成后，这里会列出每个簇包含的文档标题，便于报告中解释结果。
           </p>
+          <p v-if="hasResults && copyMessage" class="summary-copy-feedback">{{ copyMessage }}</p>
 
-          <div v-else class="cluster-group-list">
+          <div v-if="hasResults" class="cluster-group-list">
             <article
               v-for="group in clusterGroups"
               :key="group.cluster"
@@ -521,6 +584,11 @@ async function handleCluster() {
   font-size: 0.88rem;
 }
 
+.preview-table th:first-child,
+.preview-table td:first-child {
+  width: 76px;
+}
+
 .preview-table td {
   color: var(--color-text-muted);
   line-height: 1.6;
@@ -580,6 +648,14 @@ async function handleCluster() {
   gap: var(--space-3);
 }
 
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 .meta-pill {
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
@@ -588,6 +664,26 @@ async function handleCluster() {
   font-size: 0.86rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.summary-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.52rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #d3dfff;
+  background: #eef4ff;
+  color: var(--color-accent-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.summary-copy-btn:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
 }
 
 .summary-stats {
@@ -618,6 +714,12 @@ async function handleCluster() {
 .cluster-group-list {
   display: grid;
   gap: var(--space-3);
+}
+
+.summary-copy-feedback {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
 }
 
 .cluster-group-card {
@@ -681,6 +783,7 @@ async function handleCluster() {
     flex-direction: column;
   }
 
+  .summary-actions,
   .preview-head,
   .cluster-group-head {
     flex-direction: column;
