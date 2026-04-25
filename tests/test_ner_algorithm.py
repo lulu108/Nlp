@@ -185,3 +185,44 @@ def test_recognize_entities_keeps_full_entity_spans(monkeypatch):
             "end": 13,
         },
     ]
+
+
+def test_recognize_entities_accepts_char_level_spans_without_token_misread(monkeypatch):
+    text = "\u9a6c\u4e91\u5728\u676d\u5dde\u521b\u529e\u4f01\u4e1a"
+
+    class FakeTokenizer:
+        def __call__(self, input_text):
+            assert input_text == text
+            return ["\u9a6c\u4e91", "\u5728", "\u676d\u5dde", "\u521b\u529e", "\u4f01\u4e1a"]
+
+    class FakeHanLPNerModel:
+        def __call__(self, tokens):
+            assert tokens == ["\u9a6c\u4e91", "\u5728", "\u676d\u5dde", "\u521b\u529e", "\u4f01\u4e1a"]
+            # Simulate a model variant returning char-level offsets with entity text.
+            return [
+                ("\u9a6c\u4e91", "PERSON", 0, 2),
+                ("\u676d\u5dde", "LOCATION", 3, 5),
+            ]
+
+    monkeypatch.setattr(
+        ner_module,
+        "_get_hanlp_models",
+        lambda: (FakeTokenizer(), FakeHanLPNerModel()),
+    )
+
+    entities = ner_module.recognize_entities(text)
+
+    assert entities == [
+        {
+            "text": "\u9a6c\u4e91",
+            "label": "PER",
+            "start": 0,
+            "end": 2,
+        },
+        {
+            "text": "\u676d\u5dde",
+            "label": "LOC",
+            "start": 3,
+            "end": 5,
+        },
+    ]

@@ -207,7 +207,13 @@ def _normalize_entity(
 
     token_start = start
     token_end = end
-    is_token_span = _looks_like_token_span(token_start, token_end, token_offsets)
+    is_token_span = _looks_like_token_span(
+        token_start,
+        token_end,
+        token_offsets,
+        tokens=tokens,
+        entity_text=entity_text,
+    )
 
     if is_token_span:
         if not isinstance(entity_text, str) or not entity_text:
@@ -243,11 +249,33 @@ def _normalize_entity(
     }
 
 
-def _looks_like_token_span(start: int, end: int, token_offsets: list[tuple[int, int]]) -> bool:
+def _looks_like_token_span(
+    start: int,
+    end: int,
+    token_offsets: list[tuple[int, int]],
+    tokens: list[str] | None = None,
+    entity_text: str | None = None,
+) -> bool:
     if not token_offsets:
         return False
+
+    if start < 0 or end <= start:
+        return False
+
     token_count = len(token_offsets)
-    return start < token_count and end <= token_count
+    if not (start < token_count and end <= token_count):
+        return False
+
+    span_offsets = token_offsets[start:end]
+    if not span_offsets or any(offset[0] < 0 or offset[1] < 0 for offset in span_offsets):
+        return False
+
+    if isinstance(entity_text, str) and entity_text:
+        token_text = _entity_text_from_tokens(tokens or [], start, end)
+        if token_text != entity_text:
+            return False
+
+    return True
 
 
 def _token_span_to_char_span(
