@@ -4,9 +4,11 @@ from threading import Lock
 from typing import Any
 
 
+HANLP_TOKENIZER_MODEL_NAME = "COARSE_ELECTRA_SMALL_ZH"
 HANLP_NER_MODEL_NAME = "MSRA_NER_ELECTRA_SMALL_ZH"
 
-_HANLP_MODEL: Any | None = None
+_HANLP_TOKENIZER: Any | None = None
+_HANLP_NER_MODEL: Any | None = None
 _HANLP_LOAD_ATTEMPTED = False
 _HANLP_LOAD_ERROR: Exception | None = None
 _MODEL_LOCK = Lock()
@@ -37,36 +39,28 @@ _LABEL_MAP = {
 def recognize_entities(text: str) -> list[dict[str, object]]:
     """Recognize named entities with HanLP and fall back to deterministic rules."""
     if not text:
-        print("DEBUG empty text")
         return []
 
-    model = _get_hanlp_model()
-    print("DEBUG input text:", repr(text))
-    print("DEBUG model is None:", model is None)
+    tokenizer, ner_model = _get_hanlp_models()
 
-    if model is None:
-        print("DEBUG using fallback rules because model is unavailable")
+    if tokenizer is None or ner_model is None:
         return _recognize_entities_with_rules(text)
 
     try:
-        print("DEBUG using HanLP path")
-        result = _predict_with_hanlp(model, text)
-        print("DEBUG HanLP final entities:", result)
-        return result
-    except Exception as exc:
-        print("DEBUG HanLP prediction failed:", repr(exc))
-        print("DEBUG using fallback rules after exception")
+        return _predict_with_hanlp(tokenizer, ner_model, text)
+    except Exception:
         return _recognize_entities_with_rules(text)
 
-def _get_hanlp_model() -> Any | None:
-    global _HANLP_MODEL, _HANLP_LOAD_ATTEMPTED, _HANLP_LOAD_ERROR
+
+def _get_hanlp_models() -> tuple[Any | None, Any | None]:
+    global _HANLP_TOKENIZER, _HANLP_NER_MODEL, _HANLP_LOAD_ATTEMPTED, _HANLP_LOAD_ERROR
 
     if _HANLP_LOAD_ATTEMPTED:
-        return _HANLP_MODEL
+        return _HANLP_TOKENIZER, _HANLP_NER_MODEL
 
     with _MODEL_LOCK:
         if _HANLP_LOAD_ATTEMPTED:
-            return _HANLP_MODEL
+            return _HANLP_TOKENIZER, _HANLP_NER_MODEL
 
         _HANLP_LOAD_ATTEMPTED = True
 
@@ -74,32 +68,44 @@ def _get_hanlp_model() -> Any | None:
             import hanlp
 
             pretrained = getattr(hanlp, "pretrained", None)
+
+            tok_models = getattr(pretrained, "tok", None)
+            tok_model_id = getattr(tok_models, HANLP_TOKENIZER_MODEL_NAME, None)
+            if tok_model_id is None:
+                raise RuntimeError(
+                    f"HanLP pretrained tokenizer model '{HANLP_TOKENIZER_MODEL_NAME}' is not available."
+                )
+
             ner_models = getattr(pretrained, "ner", None)
-            model_id = getattr(ner_models, HANLP_NER_MODEL_NAME, None)
-            if model_id is None:
+            ner_model_id = getattr(ner_models, HANLP_NER_MODEL_NAME, None)
+            if ner_model_id is None:
                 raise RuntimeError(
                     f"HanLP pretrained NER model '{HANLP_NER_MODEL_NAME}' is not available."
                 )
 
-            _HANLP_MODEL = hanlp.load(model_id)
+            _HANLP_TOKENIZER = hanlp.load(tok_model_id)
+            _HANLP_NER_MODEL = hanlp.load(ner_model_id)
         except Exception as exc:
             _HANLP_LOAD_ERROR = exc
-            _HANLP_MODEL = None
+            _HANLP_TOKENIZER = None
+            _HANLP_NER_MODEL = None
 
-        return _HANLP_MODEL
+        return _HANLP_TOKENIZER, _HANLP_NER_MODEL
 
 
-def _predict_with_hanlp(model: Any, text: str) -> list[dict[str, object]]:
-    raw_entities = model(list(text))
-    print("DEBUG raw_entities:", raw_entities)
+def _predict_with_hanlp(tokenizer: Any, ner_model: Any, text: str) -> list[dict[str, object]]:
+    tokens = tokenizer(text)
+    if not isinstance(tokens, list):
+        return []
+
+    token_offsets = _build_token_offsets(text, tokens)
+    raw_entities = ner_model(tokens)
 
     entities: list[dict[str, object]] = []
     seen: set[tuple[object, ...]] = set()
 
     for item in _iter_hanlp_entities(raw_entities):
-        print("DEBUG raw item:", item)
-        entity = _normalize_entity(item, text)
-        print("DEBUG normalized entity:", entity)
+        entity = _normalize_entity(item, text, tokens, token_offsets)
         if entity is None:
             continue
 
@@ -117,6 +123,29 @@ def _predict_with_hanlp(model: Any, text: str) -> list[dict[str, object]]:
 
     entities.sort(key=lambda item: (int(item["start"]), int(item["end"]), str(item["label"])))
     return entities
+
+
+def _build_token_offsets(text: str, tokens: list[str]) -> list[tuple[int, int]]:
+    offsets: list[tuple[int, int]] = []
+    cursor = 0
+
+    for token in tokens:
+        if not isinstance(token, str) or not token:
+            offsets.append((-1, -1))
+            continue
+
+        start = text.find(token, cursor)
+        if start < 0:
+            start = text.find(token)
+        if start < 0:
+            offsets.append((-1, -1))
+            continue
+
+        end = start + len(token)
+        offsets.append((start, end))
+        cursor = end
+
+    return offsets
 
 
 def _iter_hanlp_entities(raw_output: Any) -> list[Any]:
@@ -143,7 +172,12 @@ def _iter_hanlp_entities(raw_output: Any) -> list[Any]:
     return []
 
 
-def _normalize_entity(item: Any, text: str) -> dict[str, object] | None:
+def _normalize_entity(
+    item: Any,
+    text: str,
+    tokens: list[str],
+    token_offsets: list[tuple[int, int]],
+) -> dict[str, object] | None:
     entity_text: str | None = None
     label: str | None = None
     start: int | None = None
@@ -171,7 +205,24 @@ def _normalize_entity(item: Any, text: str) -> dict[str, object] | None:
     if start < 0 or end <= start:
         return None
 
-    if not isinstance(entity_text, str) or not entity_text:
+    token_start = start
+    token_end = end
+    is_token_span = _looks_like_token_span(token_start, token_end, token_offsets)
+
+    if is_token_span:
+        if not isinstance(entity_text, str) or not entity_text:
+            recovered = _entity_text_from_tokens(tokens, token_start, token_end)
+            if recovered:
+                entity_text = recovered
+
+        span = _token_span_to_char_span(token_start, token_end, token_offsets)
+        if span is None:
+            return None
+        start, end = span
+        if not isinstance(entity_text, str) or not entity_text:
+            entity_text = text[start:end]
+
+    elif not isinstance(entity_text, str) or not entity_text:
         if end > len(text):
             return None
         entity_text = text[start:end]
@@ -190,6 +241,41 @@ def _normalize_entity(item: Any, text: str) -> dict[str, object] | None:
         "start": start,
         "end": end,
     }
+
+
+def _looks_like_token_span(start: int, end: int, token_offsets: list[tuple[int, int]]) -> bool:
+    if not token_offsets:
+        return False
+    token_count = len(token_offsets)
+    return start < token_count and end <= token_count
+
+
+def _token_span_to_char_span(
+    token_start: int,
+    token_end: int,
+    token_offsets: list[tuple[int, int]],
+) -> tuple[int, int] | None:
+    if token_start < 0 or token_end <= token_start:
+        return None
+    if token_end > len(token_offsets):
+        return None
+
+    span_offsets = token_offsets[token_start:token_end]
+    valid_offsets = [offset for offset in span_offsets if offset[0] >= 0 and offset[1] >= 0]
+    if not valid_offsets:
+        return None
+
+    char_start = valid_offsets[0][0]
+    char_end = valid_offsets[-1][1]
+    return char_start, char_end
+
+
+def _entity_text_from_tokens(tokens: list[str], token_start: int, token_end: int) -> str | None:
+    if token_start < 0 or token_end <= token_start:
+        return None
+    if token_end > len(tokens):
+        return None
+    return "".join(tokens[token_start:token_end])
 
 
 def _normalize_label(label: str) -> str:

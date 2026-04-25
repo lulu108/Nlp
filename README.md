@@ -203,6 +203,7 @@ P4/
 - pip
 - npm
 - HanLP 依赖会随 `requirements.txt` 一并安装，用于中文 NER 基线
+- 当前 NER 的 HanLP 路径采用“分词器 + NER”串联推理（先分词，再做 NER），不再使用逐字符输入
 
 ---
 

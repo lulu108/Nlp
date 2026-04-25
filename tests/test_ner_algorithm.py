@@ -3,16 +3,26 @@ from algorithms import ner as ner_module
 
 def test_recognize_entities_uses_hanlp_when_available(monkeypatch):
     text = "\u5c0f\u660e\u5728\u5317\u4eac\u5927\u5b66\u5b66\u4e60"
+    tokens = ["\u5c0f\u660e", "\u5728", "\u5317\u4eac\u5927\u5b66", "\u5b66\u4e60"]
 
-    class FakeHanLPModel:
+    class FakeTokenizer:
+        def __call__(self, input_text):
+            assert input_text == text
+            return tokens
+
+    class FakeHanLPNerModel:
         def __call__(self, tokens):
-            assert tokens == list(text)
+            assert tokens == ["\u5c0f\u660e", "\u5728", "\u5317\u4eac\u5927\u5b66", "\u5b66\u4e60"]
             return [
-                ("\u5c0f\u660e", "PERSON", 0, 2),
-                ("\u5317\u4eac\u5927\u5b66", "ORGANIZATION", 3, 7),
+                ("\u5c0f\u660e", "PERSON", 0, 1),
+                ("\u5317\u4eac\u5927\u5b66", "ORGANIZATION", 2, 3),
             ]
 
-    monkeypatch.setattr(ner_module, "_get_hanlp_model", lambda: FakeHanLPModel())
+    monkeypatch.setattr(
+        ner_module,
+        "_get_hanlp_models",
+        lambda: (FakeTokenizer(), FakeHanLPNerModel()),
+    )
 
     entities = ner_module.recognize_entities(text)
 
@@ -35,14 +45,23 @@ def test_recognize_entities_uses_hanlp_when_available(monkeypatch):
 def test_recognize_entities_normalizes_location_labels(monkeypatch):
     text = "\u6211\u60f3\u53bb\u5317\u4eac\u65c5\u6e38"
 
-    class FakeHanLPModel:
+    class FakeTokenizer:
+        def __call__(self, input_text):
+            assert input_text == text
+            return ["\u6211\u60f3", "\u53bb", "\u5317\u4eac", "\u65c5\u6e38"]
+
+    class FakeHanLPNerModel:
         def __call__(self, tokens):
-            assert tokens == list(text)
+            assert tokens == ["\u6211\u60f3", "\u53bb", "\u5317\u4eac", "\u65c5\u6e38"]
             return [
-                ("\u5317\u4eac", "ns", 3, 5),
+                ("\u5317\u4eac", "ns", 2, 3),
             ]
 
-    monkeypatch.setattr(ner_module, "_get_hanlp_model", lambda: FakeHanLPModel())
+    monkeypatch.setattr(
+        ner_module,
+        "_get_hanlp_models",
+        lambda: (FakeTokenizer(), FakeHanLPNerModel()),
+    )
 
     entities = ner_module.recognize_entities(text)
 
@@ -59,7 +78,7 @@ def test_recognize_entities_normalizes_location_labels(monkeypatch):
 def test_recognize_entities_falls_back_to_rules_when_hanlp_is_unavailable(monkeypatch):
     text = "\u5c0f\u660e\u5728\u5317\u4eac\u5927\u5b66\u5b66\u4e60"
 
-    monkeypatch.setattr(ner_module, "_get_hanlp_model", lambda: None)
+    monkeypatch.setattr(ner_module, "_get_hanlp_models", lambda: (None, None))
 
     entities = ner_module.recognize_entities(text)
 
@@ -82,11 +101,20 @@ def test_recognize_entities_falls_back_to_rules_when_hanlp_is_unavailable(monkey
 def test_recognize_entities_falls_back_to_rules_when_hanlp_prediction_fails(monkeypatch):
     text = "\u6211\u60f3\u53bb\u5317\u4eac\u65c5\u6e38"
 
-    class BrokenHanLPModel:
+    class FakeTokenizer:
+        def __call__(self, input_text):
+            assert input_text == text
+            return ["\u6211\u60f3", "\u53bb", "\u5317\u4eac", "\u65c5\u6e38"]
+
+    class BrokenHanLPNerModel:
         def __call__(self, _tokens):
             raise RuntimeError("model inference failed")
 
-    monkeypatch.setattr(ner_module, "_get_hanlp_model", lambda: BrokenHanLPModel())
+    monkeypatch.setattr(
+        ner_module,
+        "_get_hanlp_models",
+        lambda: (FakeTokenizer(), BrokenHanLPNerModel()),
+    )
 
     entities = ner_module.recognize_entities(text)
 
@@ -97,4 +125,63 @@ def test_recognize_entities_falls_back_to_rules_when_hanlp_prediction_fails(monk
             "start": 3,
             "end": 5,
         }
+    ]
+
+
+def test_recognize_entities_keeps_full_entity_spans(monkeypatch):
+    text = "\u9a6c\u4e91\u5728\u676d\u5dde\u521b\u529e\u963f\u91cc\u5df4\u5df4\u96c6\u56e2"
+
+    class FakeTokenizer:
+        def __call__(self, input_text):
+            assert input_text == text
+            return [
+                "\u9a6c\u4e91",
+                "\u5728",
+                "\u676d\u5dde",
+                "\u521b\u529e",
+                "\u963f\u91cc\u5df4\u5df4\u96c6\u56e2",
+            ]
+
+    class FakeHanLPNerModel:
+        def __call__(self, tokens):
+            assert tokens == [
+                "\u9a6c\u4e91",
+                "\u5728",
+                "\u676d\u5dde",
+                "\u521b\u529e",
+                "\u963f\u91cc\u5df4\u5df4\u96c6\u56e2",
+            ]
+            return [
+                ("\u9a6c\u4e91", "PERSON", 0, 1),
+                ("\u676d\u5dde", "LOCATION", 2, 3),
+                ("\u963f\u91cc\u5df4\u5df4\u96c6\u56e2", "ORGANIZATION", 4, 5),
+            ]
+
+    monkeypatch.setattr(
+        ner_module,
+        "_get_hanlp_models",
+        lambda: (FakeTokenizer(), FakeHanLPNerModel()),
+    )
+
+    entities = ner_module.recognize_entities(text)
+
+    assert entities == [
+        {
+            "text": "\u9a6c\u4e91",
+            "label": "PER",
+            "start": 0,
+            "end": 2,
+        },
+        {
+            "text": "\u676d\u5dde",
+            "label": "LOC",
+            "start": 3,
+            "end": 5,
+        },
+        {
+            "text": "\u963f\u91cc\u5df4\u5df4\u96c6\u56e2",
+            "label": "ORG",
+            "start": 7,
+            "end": 13,
+        },
     ]
