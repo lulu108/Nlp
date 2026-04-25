@@ -12,12 +12,26 @@ _HANLP_NER_MODEL: Any | None = None
 _HANLP_LOAD_ATTEMPTED = False
 _HANLP_LOAD_ERROR: Exception | None = None
 _MODEL_LOCK = Lock()
+_STATUS_LOCK = Lock()
+
+_LAST_USED_PATH = "not-run"
+_LAST_HANLP_PREDICT_ERROR: Exception | None = None
 
 _RULE_BASED_PATTERNS = [
     ("\u5317\u4eac\u5927\u5b66", "ORG"),
     ("\u5317\u4eac", "LOC"),
     ("\u5c0f\u660e", "PER"),
 ]
+
+_OUTPUT_LABELS = {
+    "PER",
+    "LOC",
+    "ORG",
+    "GPE",
+    "FAC",
+    "COMPANY",
+    "INSTITUTION",
+}
 
 _LABEL_MAP = {
     "PER": "PER",
@@ -26,30 +40,82 @@ _LABEL_MAP = {
     "LOC": "LOC",
     "LOCATION": "LOC",
     "NS": "LOC",
-    "GPE": "LOC",
-    "FAC": "LOC",
+    "GPE": "GPE",
+    "FAC": "FAC",
     "ORG": "ORG",
     "ORGANIZATION": "ORG",
     "NT": "ORG",
-    "COMPANY": "ORG",
-    "INSTITUTION": "ORG",
+    "COMPANY": "COMPANY",
+    "CORPORATION": "COMPANY",
+    "ENTERPRISE": "COMPANY",
+    "BUSINESS": "COMPANY",
+    "INSTITUTION": "INSTITUTION",
+    "SCHOOL": "INSTITUTION",
+    "UNIVERSITY": "INSTITUTION",
+    "COLLEGE": "INSTITUTION",
+    "HOSPITAL": "INSTITUTION",
+    "GOV": "INSTITUTION",
+    "GOVERNMENT": "INSTITUTION",
+    "AGENCY": "INSTITUTION",
 }
 
 
 def recognize_entities(text: str) -> list[dict[str, object]]:
     """Recognize named entities with HanLP and fall back to deterministic rules."""
     if not text:
+        _set_last_used_path("empty-input")
         return []
 
     tokenizer, ner_model = _get_hanlp_models()
 
     if tokenizer is None or ner_model is None:
+        _set_last_used_path("fallback")
         return _recognize_entities_with_rules(text)
 
     try:
-        return _predict_with_hanlp(tokenizer, ner_model, text)
-    except Exception:
+        entities = _predict_with_hanlp(tokenizer, ner_model, text)
+        _set_last_hanlp_predict_error(None)
+        _set_last_used_path("hanlp")
+        return entities
+    except Exception as exc:
+        _set_last_hanlp_predict_error(exc)
+        _set_last_used_path("fallback")
         return _recognize_entities_with_rules(text)
+
+
+def get_ner_runtime_status() -> dict[str, object]:
+    """Expose lightweight runtime status for observability (no stack traces)."""
+    with _STATUS_LOCK:
+        return {
+            "tokenizer_model": HANLP_TOKENIZER_MODEL_NAME,
+            "ner_model": HANLP_NER_MODEL_NAME,
+            "hanlp_load_attempted": _HANLP_LOAD_ATTEMPTED,
+            "tokenizer_loaded": _HANLP_TOKENIZER is not None,
+            "ner_loaded": _HANLP_NER_MODEL is not None,
+            "last_used_path": _LAST_USED_PATH,
+            "has_hanlp_load_error": _HANLP_LOAD_ERROR is not None,
+            "has_hanlp_predict_error": _LAST_HANLP_PREDICT_ERROR is not None,
+            "hanlp_load_error_type": (
+                type(_HANLP_LOAD_ERROR).__name__ if _HANLP_LOAD_ERROR is not None else None
+            ),
+            "hanlp_predict_error_type": (
+                type(_LAST_HANLP_PREDICT_ERROR).__name__
+                if _LAST_HANLP_PREDICT_ERROR is not None
+                else None
+            ),
+        }
+
+
+def _set_last_used_path(path: str) -> None:
+    global _LAST_USED_PATH
+    with _STATUS_LOCK:
+        _LAST_USED_PATH = path
+
+
+def _set_last_hanlp_predict_error(exc: Exception | None) -> None:
+    global _LAST_HANLP_PREDICT_ERROR
+    with _STATUS_LOCK:
+        _LAST_HANLP_PREDICT_ERROR = exc
 
 
 def _get_hanlp_models() -> tuple[Any | None, Any | None]:
@@ -126,6 +192,12 @@ def _predict_with_hanlp(tokenizer: Any, ner_model: Any, text: str) -> list[dict[
 
 
 def _build_token_offsets(text: str, tokens: list[str]) -> list[tuple[int, int]]:
+    """Build token offsets with strict left-to-right alignment.
+
+    We only accept matches at or after the current cursor to keep offsets
+    monotonic. If a token cannot be found reliably in sequence, we mark it as
+    invalid and continue, letting downstream span conversion reject it.
+    """
     offsets: list[tuple[int, int]] = []
     cursor = 0
 
@@ -135,8 +207,6 @@ def _build_token_offsets(text: str, tokens: list[str]) -> list[tuple[int, int]]:
             continue
 
         start = text.find(token, cursor)
-        if start < 0:
-            start = text.find(token)
         if start < 0:
             offsets.append((-1, -1))
             continue
@@ -207,6 +277,12 @@ def _normalize_entity(
 
     token_start = start
     token_end = end
+
+    # Be conservative: if the span looks like token indices but covers an
+    # unaligned token, reject it instead of guessing a char-level fallback.
+    if _covers_invalid_token_offsets(token_start, token_end, token_offsets):
+        return None
+
     is_token_span = _looks_like_token_span(
         token_start,
         token_end,
@@ -278,6 +354,21 @@ def _looks_like_token_span(
     return True
 
 
+def _covers_invalid_token_offsets(
+    start: int,
+    end: int,
+    token_offsets: list[tuple[int, int]],
+) -> bool:
+    if start < 0 or end <= start:
+        return False
+    token_count = len(token_offsets)
+    if not (start < token_count and end <= token_count):
+        return False
+
+    span_offsets = token_offsets[start:end]
+    return any(offset[0] < 0 or offset[1] < 0 for offset in span_offsets)
+
+
 def _token_span_to_char_span(
     token_start: int,
     token_end: int,
@@ -289,12 +380,13 @@ def _token_span_to_char_span(
         return None
 
     span_offsets = token_offsets[token_start:token_end]
-    valid_offsets = [offset for offset in span_offsets if offset[0] >= 0 and offset[1] >= 0]
-    if not valid_offsets:
+    if not span_offsets:
+        return None
+    if any(offset[0] < 0 or offset[1] < 0 for offset in span_offsets):
         return None
 
-    char_start = valid_offsets[0][0]
-    char_end = valid_offsets[-1][1]
+    char_start = span_offsets[0][0]
+    char_end = span_offsets[-1][1]
     return char_start, char_end
 
 
@@ -314,7 +406,15 @@ def _normalize_label(label: str) -> str:
             normalized = normalized[len(prefix) :]
             break
 
-    return _LABEL_MAP.get(normalized, normalized)
+    mapped = _LABEL_MAP.get(normalized)
+    if mapped is not None:
+        return mapped
+
+    if normalized in _OUTPUT_LABELS:
+        return normalized
+
+    # Keep output labels controlled for frontend simplicity and report consistency.
+    return "ORG"
 
 
 def _locate_entity_span(

@@ -20,6 +20,7 @@ from backend.routes.cluster import cluster_bp
 from backend.routes.ner import ner_bp
 from backend.routes.tokenize import tokenize_bp
 from backend.utils.response import success_response
+from algorithms.ner import get_ner_runtime_status
 
 
 def _read_bool_env(name: str, default: bool) -> bool:
@@ -58,6 +59,7 @@ def create_app() -> Flask:
 				"python_version": platform.python_version(),
 				"pid": os.getpid(),
 				"cwd": os.getcwd(),
+				"ner_status": get_ner_runtime_status(),
 			}
 		)
 

@@ -137,9 +137,14 @@
 ### 4.5 字段说明
 
 - `text`：实体文本
-- `label`：实体类别，如 `PER`、`LOC`、`ORG`
+- `label`：实体类别，采用受控集合：`PER`、`LOC`、`ORG`、`GPE`、`FAC`、`COMPANY`、`INSTITUTION`
 - `start`：实体起始下标
 - `end`：实体结束下标
+
+说明：
+
+- 接口字段结构保持不变（`text`、`label`、`start`、`end`）
+- 系统优先保持标签可读和稳定；不在受控集合内的细分类别会归并为 `ORG`
 
 ### 4.6 失败返回示例
 

@@ -205,6 +205,9 @@ P4/
 - HanLP 依赖会随 `requirements.txt` 一并安装，用于中文 NER 基线
 - 当前 NER 的 HanLP 路径采用“分词器 + NER”串联推理（先分词，再做 NER），不再使用逐字符输入
 - 当 HanLP 模型不可用或推理异常时，系统仍会自动回退到规则识别路径，保证接口稳定可用
+- NER 标签采用受控、可读的类别集合：`PER`、`LOC`、`ORG`、`GPE`、`FAC`、`COMPANY`、`INSTITUTION`
+- 为保持课程项目可解释性，未纳入受控集合的标签会收敛到 `ORG`，避免输出过多零散类别
+- 可通过 `GET /api/meta` 查看 `ner_status.last_used_path`：`hanlp` 表示主路径，`fallback` 表示已回退规则识别
 
 ---
 
