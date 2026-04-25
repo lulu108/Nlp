@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as echarts from "echarts";
+import { CLUSTER_PALETTE, getClusterColor } from "../constants/clusterPalette";
 
 const props = defineProps({
   points: {
@@ -13,7 +14,6 @@ const props = defineProps({
   },
 });
 
-const palette = ["#2b63f0", "#16a34a", "#f59e0b", "#ef4444", "#0ea5e9", "#8b5cf6"];
 const chartRef = ref(null);
 let chartInstance = null;
 
@@ -37,7 +37,7 @@ const groupedSeries = computed(() => {
 
 function buildOption() {
   return {
-    color: palette,
+    color: CLUSTER_PALETTE,
     legend: {
       top: 8,
       icon: "circle",
@@ -112,7 +112,7 @@ function buildOption() {
         scale: true,
       },
       itemStyle: {
-        color: palette[index % palette.length],
+        color: getClusterColor(cluster, index),
         shadowBlur: 8,
         shadowColor: "rgba(15, 23, 42, 0.12)",
       },

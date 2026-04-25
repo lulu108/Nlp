@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { clusterDocuments } from "../api/nlp";
 import ClusterChart from "../components/ClusterChart.vue";
+import { getClusterColor } from "../constants/clusterPalette";
 
 const SAMPLE_INPUT = [
   "科技新闻::人工智能与芯片技术持续推动科技产业升级。",
@@ -51,6 +52,12 @@ const parsedPreview = computed(() => {
 });
 
 const documentCount = computed(() => parsedPreview.value.length);
+const previewRows = computed(() =>
+  parsedPreview.value.map((item) => ({
+    title: item.title,
+    summary: item.text.length > 48 ? `${item.text.slice(0, 48)}...` : item.text,
+  })),
+);
 const clusterGroups = computed(() => {
   const groups = new Map();
 
@@ -68,6 +75,7 @@ const clusterGroups = computed(() => {
       cluster,
       count: titles.length,
       titles,
+      color: getClusterColor(cluster),
     }));
 });
 const hasResults = computed(() => points.value.length > 0);
@@ -191,6 +199,34 @@ async function handleCluster() {
         </div>
       </div>
 
+      <div class="preview-block">
+        <div class="preview-head">
+          <h4>文档预览表</h4>
+          <span class="meta-pill">{{ previewRows.length }} 条</span>
+        </div>
+
+        <div v-if="previewRows.length === 0" class="preview-empty">
+          按“标题::内容”格式输入后，这里会自动展示解析出的标题和正文摘要。
+        </div>
+
+        <div v-else class="preview-table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>标题</th>
+                <th>正文摘要</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in previewRows" :key="`${row.title}-${row.summary}`">
+                <td>{{ row.title }}</td>
+                <td>{{ row.summary }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="action-row">
         <button class="primary-btn" :disabled="loading" @click="handleCluster">
           {{ loading ? "聚类中..." : "开始聚类" }}
@@ -258,7 +294,13 @@ async function handleCluster() {
               class="cluster-group-card"
             >
               <div class="cluster-group-head">
-                <strong>簇 {{ group.cluster }}</strong>
+                <div class="cluster-badge">
+                  <span
+                    class="cluster-dot"
+                    :style="{ backgroundColor: group.color }"
+                  />
+                  <strong>簇 {{ group.cluster }}</strong>
+                </div>
                 <span>{{ group.count }} 篇文档</span>
               </div>
 
@@ -427,6 +469,63 @@ async function handleCluster() {
   gap: var(--space-3);
 }
 
+.preview-block {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: #fbfdff;
+  border: 1px solid var(--color-border-soft);
+}
+
+.preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.preview-head h4 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 1rem;
+}
+
+.preview-empty {
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.preview-table-wrap {
+  overflow-x: auto;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 0.9rem 0.85rem;
+  border-bottom: 1px solid var(--color-border-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.preview-table th {
+  color: var(--color-text-strong);
+  font-size: 0.88rem;
+}
+
+.preview-table td {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
 .status-banner {
   padding: 0.95rem 1rem;
   border-radius: var(--radius-lg);
@@ -536,6 +635,19 @@ async function handleCluster() {
   color: var(--color-text-strong);
 }
 
+.cluster-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.cluster-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(43, 99, 240, 0.12);
+}
+
 .cluster-group-head span {
   color: var(--color-text-muted);
   font-size: 0.9rem;
@@ -567,6 +679,12 @@ async function handleCluster() {
   .section-head,
   .summary-head {
     flex-direction: column;
+  }
+
+  .preview-head,
+  .cluster-group-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .page-hero-copy h2 {

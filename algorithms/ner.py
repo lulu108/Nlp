@@ -37,17 +37,26 @@ _LABEL_MAP = {
 def recognize_entities(text: str) -> list[dict[str, object]]:
     """Recognize named entities with HanLP and fall back to deterministic rules."""
     if not text:
+        print("DEBUG empty text")
         return []
 
     model = _get_hanlp_model()
+    print("DEBUG input text:", repr(text))
+    print("DEBUG model is None:", model is None)
+
     if model is None:
+        print("DEBUG using fallback rules because model is unavailable")
         return _recognize_entities_with_rules(text)
 
     try:
-        return _predict_with_hanlp(model, text)
-    except Exception:
+        print("DEBUG using HanLP path")
+        result = _predict_with_hanlp(model, text)
+        print("DEBUG HanLP final entities:", result)
+        return result
+    except Exception as exc:
+        print("DEBUG HanLP prediction failed:", repr(exc))
+        print("DEBUG using fallback rules after exception")
         return _recognize_entities_with_rules(text)
-
 
 def _get_hanlp_model() -> Any | None:
     global _HANLP_MODEL, _HANLP_LOAD_ATTEMPTED, _HANLP_LOAD_ERROR
@@ -82,11 +91,15 @@ def _get_hanlp_model() -> Any | None:
 
 def _predict_with_hanlp(model: Any, text: str) -> list[dict[str, object]]:
     raw_entities = model(list(text))
+    print("DEBUG raw_entities:", raw_entities)
+
     entities: list[dict[str, object]] = []
     seen: set[tuple[object, ...]] = set()
 
     for item in _iter_hanlp_entities(raw_entities):
+        print("DEBUG raw item:", item)
         entity = _normalize_entity(item, text)
+        print("DEBUG normalized entity:", entity)
         if entity is None:
             continue
 

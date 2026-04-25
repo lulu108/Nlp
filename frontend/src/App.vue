@@ -18,6 +18,28 @@ const activeTab = ref("single");
       </div>
     </header>
 
+    <section class="flow-strip" aria-label="分析流程">
+      <div class="flow-step">
+        <span class="flow-index">01</span>
+        <strong>文本输入</strong>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">
+        <span class="flow-index">02</span>
+        <strong>接口调用</strong>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">
+        <span class="flow-index">03</span>
+        <strong>NLP 分析</strong>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">
+        <span class="flow-index">04</span>
+        <strong>结果展示</strong>
+      </div>
+    </section>
+
     <main class="app-main">
       <nav class="tab-actions" aria-label="页面导航">
         <button
