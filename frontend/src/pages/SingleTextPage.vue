@@ -1,6 +1,12 @@
 <script setup>
-import { computed, ref } from "vue";
-import { tokenizeText, recognizeEntities, classifyText } from "../api/nlp";
+import { computed, onMounted, ref } from "vue";
+import {
+  tokenizeText,
+  recognizeEntities,
+  classifyText,
+  getBackendMeta,
+  getApiBaseUrl,
+} from "../api/nlp";
 import TokenResultCard from "../components/TokenResultCard.vue";
 import NerResultCard from "../components/NerResultCard.vue";
 import ClassifyResultCard from "../components/ClassifyResultCard.vue";
@@ -37,6 +43,14 @@ const label = ref("");
 const confidence = ref(null);
 const hasSubmitted = ref(false);
 const copyMessage = ref("");
+const backendStatus = ref({
+  online: false,
+  service: "未知服务",
+  lastUsedPath: "unknown",
+  error: "",
+});
+const backendStatusLoading = ref(false);
+const backendBaseUrl = getApiBaseUrl();
 
 const trimmedText = computed(() => text.value.trim());
 const charCount = computed(() => trimmedText.value.length);
@@ -182,6 +196,33 @@ async function handleAnalyze() {
     loading.value = false;
   }
 }
+
+async function refreshBackendStatus() {
+  backendStatusLoading.value = true;
+
+  try {
+    const meta = await getBackendMeta();
+    backendStatus.value = {
+      online: true,
+      service: meta?.service || "未知服务",
+      lastUsedPath: meta?.ner_status?.last_used_path || "unknown",
+      error: "",
+    };
+  } catch (e) {
+    backendStatus.value = {
+      online: false,
+      service: "未知服务",
+      lastUsedPath: "unknown",
+      error: e instanceof Error ? e.message : "无法连接后端服务",
+    };
+  } finally {
+    backendStatusLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  refreshBackendStatus();
+});
 </script>
 
 <template>
@@ -207,6 +248,54 @@ async function handleAnalyze() {
         </article>
       </div>
     </header>
+
+    <section class="workspace-card">
+      <div class="section-head">
+        <div>
+          <h3>后端状态</h3>
+          <p>用于课堂演示快速确认服务连通性与当前 NER 运行路径。</p>
+        </div>
+      </div>
+
+      <div class="backend-status-row">
+        <article class="backend-status-item">
+          <span>服务状态</span>
+          <strong :class="backendStatus.online ? 'status-ok' : 'status-down'">
+            {{ backendStatus.online ? "在线" : "离线" }}
+          </strong>
+        </article>
+        <article class="backend-status-item">
+          <span>后端地址</span>
+          <strong>{{ backendBaseUrl }}</strong>
+        </article>
+        <article class="backend-status-item">
+          <span>服务名称</span>
+          <strong>{{ backendStatus.service }}</strong>
+        </article>
+        <article class="backend-status-item">
+          <span>NER 路径</span>
+          <strong>{{ backendStatus.lastUsedPath }}</strong>
+        </article>
+      </div>
+
+      <div class="action-row">
+        <button
+          class="ghost-btn"
+          type="button"
+          :disabled="backendStatusLoading"
+          @click="refreshBackendStatus"
+        >
+          {{ backendStatusLoading ? "刷新中..." : "刷新状态" }}
+        </button>
+      </div>
+
+      <p v-if="backendStatus.error" class="status-text status-text-error">
+        后端连接失败：{{ backendStatus.error }}
+      </p>
+      <p v-else class="status-text">
+        已加载 /api/meta 状态信息，不影响下方文本分析流程。
+      </p>
+    </section>
 
     <section class="workspace-card">
       <div class="section-head">
@@ -485,6 +574,50 @@ async function handleAnalyze() {
   font-size: 0.92rem;
 }
 
+.backend-status-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.backend-status-item {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-soft);
+  background: #f8fbff;
+}
+
+.backend-status-item span {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.backend-status-item strong {
+  color: var(--color-text-strong);
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.status-ok {
+  color: #067647;
+}
+
+.status-down {
+  color: #b42318;
+}
+
+.status-text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.status-text-error {
+  color: #b42318;
+}
+
 .primary-btn,
 .secondary-btn,
 .ghost-btn {
@@ -556,7 +689,8 @@ async function handleAnalyze() {
 @media (max-width: 960px) {
   .page-hero,
   .result-grid,
-  .overview-grid {
+  .overview-grid,
+  .backend-status-row {
     grid-template-columns: 1fr;
   }
 }

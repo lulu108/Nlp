@@ -413,7 +413,7 @@ def test_recognize_entities_maps_company_and_facility_labels(monkeypatch):
     ]
 
 
-def test_recognize_entities_unknown_label_falls_back_to_org(monkeypatch):
+def test_recognize_entities_unknown_label_falls_back_to_misc(monkeypatch):
     text = "某组织发布公告"
 
     class FakeTokenizer:
@@ -437,5 +437,5 @@ def test_recognize_entities_unknown_label_falls_back_to_org(monkeypatch):
     entities = ner_module.recognize_entities(text)
 
     assert entities == [
-        {"text": "某组织", "label": "ORG", "start": 0, "end": 3},
+        {"text": "某组织", "label": "MISC", "start": 0, "end": 3},
     ]

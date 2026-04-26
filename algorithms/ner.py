@@ -31,6 +31,7 @@ _OUTPUT_LABELS = {
     "FAC",
     "COMPANY",
     "INSTITUTION",
+    "MISC",
 }
 
 _LABEL_MAP = {
@@ -414,7 +415,7 @@ def _normalize_label(label: str) -> str:
         return normalized
 
     # Keep output labels controlled for frontend simplicity and report consistency.
-    return "ORG"
+    return "MISC"
 
 
 def _locate_entity_span(

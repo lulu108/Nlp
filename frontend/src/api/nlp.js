@@ -48,3 +48,23 @@ export function clusterDocuments(documents, clusterCount) {
   }
   return postJson("/api/cluster", payload);
 }
+
+export function getBackendMeta() {
+  return fetch(`${BASE_URL}/api/meta`)
+    .then(async (response) => {
+      const contentType = response.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+      const data = isJson ? await response.json() : {};
+
+      if (!response.ok) {
+        const message = data?.message || `Request failed with status ${response.status}`;
+        throw new Error(message);
+      }
+
+      return data;
+    });
+}
+
+export function getApiBaseUrl() {
+  return BASE_URL;
+}
