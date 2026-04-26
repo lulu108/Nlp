@@ -1,23 +1,18 @@
 <script setup>
 import { computed } from "vue";
 
-const LABEL_TEXT_MAP = {
-  PER: "人名",
-  LOC: "地点",
-  ORG: "机构",
+const LABEL_META_MAP = {
+  PER: { name: "人名", group: "person" },
+  LOC: { name: "地点", group: "location" },
+  GPE: { name: "行政地域", group: "location" },
+  FAC: { name: "设施/景点", group: "location" },
+  ORG: { name: "机构", group: "organization" },
+  COMPANY: { name: "公司", group: "organization" },
+  INSTITUTION: { name: "单位", group: "organization" },
+  MISC: { name: "其他实体", group: "misc" },
 };
 
-const LABEL_CLASS_MAP = {
-  PER: "entity-highlight-per",
-  LOC: "entity-highlight-loc",
-  ORG: "entity-highlight-org",
-};
-
-const ENTITY_LEGEND = [
-  { label: "PER", text: "人名" },
-  { label: "LOC", text: "地点" },
-  { label: "ORG", text: "机构" },
-];
+const LABEL_ORDER = ["PER", "LOC", "GPE", "FAC", "ORG", "COMPANY", "INSTITUTION", "MISC"];
 
 const props = defineProps({
   entities: {
@@ -39,11 +34,12 @@ const props = defineProps({
 });
 
 function getLabelText(label) {
-  return LABEL_TEXT_MAP[label] || label;
+  return LABEL_META_MAP[label]?.name || "未定义";
 }
 
 function getLabelClass(label) {
-  return LABEL_CLASS_MAP[label] || "entity-highlight-default";
+  const group = LABEL_META_MAP[label]?.group || "misc";
+  return `entity-tone-${group}`;
 }
 
 const normalizedEntities = computed(() =>
@@ -57,6 +53,23 @@ const normalizedEntities = computed(() =>
     )
     .sort((a, b) => a.start - b.start || b.end - a.end),
 );
+
+const legendItems = computed(() => {
+  const labelsInResult = new Set(
+    normalizedEntities.value
+      .map((item) => (typeof item?.label === "string" ? item.label.toUpperCase() : ""))
+      .filter(Boolean),
+  );
+
+  const orderedLabels = LABEL_ORDER.filter((label) => labelsInResult.has(label));
+  const extraLabels = [...labelsInResult].filter((label) => !LABEL_ORDER.includes(label)).sort();
+
+  return [...orderedLabels, ...extraLabels].map((label) => ({
+    code: label,
+    name: getLabelText(label),
+    className: getLabelClass(label),
+  }));
+});
 
 const highlightedSegments = computed(() => {
   if (!props.sourceText) {
@@ -83,6 +96,7 @@ const highlightedSegments = computed(() => {
         highlight: true,
         label: entity.label,
         className: getLabelClass(entity.label),
+        labelText: getLabelText(entity.label),
       });
       cursor = end;
     }
@@ -130,13 +144,14 @@ const highlightedSegments = computed(() => {
         <span class="legend-label">颜色图例</span>
         <div class="legend-items">
           <span
-            v-for="item in ENTITY_LEGEND"
-            :key="item.label"
+            v-for="item in legendItems"
+            :key="item.code"
             class="legend-chip"
-            :class="getLabelClass(item.label)"
+            :class="item.className"
           >
             <span class="legend-dot" />
-            {{ item.text }}
+            <strong>{{ item.code }}</strong>
+            <span>{{ item.name }}</span>
           </span>
         </div>
       </div>
@@ -158,7 +173,9 @@ const highlightedSegments = computed(() => {
               :class="segment.className"
             >
               {{ segment.text }}
-              <span class="highlight-inline-label">{{ getLabelText(segment.label) }}</span>
+              <span class="highlight-inline-label">
+                {{ segment.label }} · {{ segment.labelText }}
+              </span>
             </mark>
             <span v-else>{{ segment.text }}</span>
           </template>
@@ -271,6 +288,14 @@ const highlightedSegments = computed(() => {
   color: var(--color-text-strong);
 }
 
+.legend-chip strong {
+  font-size: 0.8rem;
+}
+
+.legend-chip span {
+  opacity: 0.9;
+}
+
 .legend-dot {
   width: 10px;
   height: 10px;
@@ -331,22 +356,22 @@ const highlightedSegments = computed(() => {
   opacity: 0.82;
 }
 
-.entity-highlight-per {
-  background: #dfe9ff;
+.entity-tone-person {
+  background: #e7edff;
   color: #2450be;
 }
 
-.entity-highlight-loc {
-  background: #dff6eb;
+.entity-tone-location {
+  background: #e1f6ea;
   color: #0f7a4c;
 }
 
-.entity-highlight-org {
-  background: #fff1d6;
-  color: #a16207;
+.entity-tone-organization {
+  background: #fff2dc;
+  color: #9a6700;
 }
 
-.entity-highlight-default {
+.entity-tone-misc {
   background: #eceff4;
   color: #475569;
 }
