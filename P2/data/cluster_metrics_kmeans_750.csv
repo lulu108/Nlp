@@ -1,0 +1,2 @@
+﻿tag,seed,n_samples,n_clusters,vocab_size,max_df,min_df,ngram_range,max_features,sublinear_tf,n_init,nmi,ari,acc,silhouette_cosine
+750,42,750,5,6117,0.8,4,"(1, 1)",,True,50,0.651345,0.472872,0.744,0.041416

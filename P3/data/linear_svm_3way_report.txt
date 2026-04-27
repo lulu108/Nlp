@@ -1,0 +1,50 @@
+===== LinearSVC 三划分实验报告 =====
+
+[1] 数据规模
+X_train shape = (512, 3926)
+X_dev shape = (128, 3926)
+X_test shape = (160, 3926)
+auto_dev_split_used = False
+
+[2] Dev 参数选择结果
+C=0.5, dev_acc=0.9609, dev_macro_f1=0.9608, dev_macro_p=0.9646, dev_macro_r=0.9609
+C=1.0, dev_acc=0.9609, dev_macro_f1=0.9608, dev_macro_p=0.9646, dev_macro_r=0.9609
+C=2.0, dev_acc=0.9609, dev_macro_f1=0.9608, dev_macro_p=0.9646, dev_macro_r=0.9609
+C=5.0, dev_acc=0.9609, dev_macro_f1=0.9608, dev_macro_p=0.9646, dev_macro_r=0.9609
+
+[3] 最优参数
+best_C = 0.5
+best_dev_macro_f1 = 0.9608
+
+[4] Test 最终结果
+Accuracy = 0.9625
+Macro Precision = 0.9634
+Macro Recall = 0.9625
+Macro F1 = 0.9626
+Weighted Precision = 0.9634
+Weighted Recall = 0.9625
+Weighted F1 = 0.9626
+
+[5] 分类报告
+              precision    recall  f1-score   support
+
+          体育     0.9750    0.9750    0.9750        40
+          科技     0.9286    0.9750    0.9512        40
+          财经     0.9500    0.9500    0.9500        40
+          教育     1.0000    0.9500    0.9744        40
+
+    accuracy                         0.9625       160
+   macro avg     0.9634    0.9625    0.9626       160
+weighted avg     0.9634    0.9625    0.9626       160
+
+
+[6] 混淆矩阵
+[[39  1  0  0]
+ [ 0 39  1  0]
+ [ 1  1 38  0]
+ [ 0  1  1 38]]
+
+[7] 输出文件
+模型文件: D:\Project\project_nlp\Nlp\P3\data\linear_svm_best_model.joblib
+预测结果: D:\Project\project_nlp\Nlp\P3\data\linear_svm_test_predictions.csv
+混淆矩阵图: D:\Project\project_nlp\Nlp\P3\data\linear_svm_test_confusion_matrix.png

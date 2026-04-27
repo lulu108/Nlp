@@ -1,0 +1,4 @@
+# 忽略大数据文件夹（不上传到GitHub）
+P2/THUCNews_fixed/
+P1/BiLSTMCRF/data/cc.zh.300.vec/
+P4/frontend/node_modules/

@@ -1,0 +1,2 @@
+﻿tag,seed,n_samples,n_clusters,vocab_size,preset,feature_mode,max_df,min_df,ngram_range,max_features,sublinear_tf,n_init,nmi,ari,acc,silhouette_cosine
+600,42,600,4,30000,600,char,0.95,2,"(2, 4)",30000,True,100,0.724267,0.632557,0.833333,0.053938

@@ -1,0 +1,39 @@
+===== 阶段2：训练前预处理报告（三划分版） =====
+输入文件: D:\Project\project_nlp\Nlp\P3\data\thucnews_4class_200_clean.csv
+总样本数: 800
+
+[1] 分层三划分
+训练集样本数: 512
+开发集样本数: 128
+测试集样本数: 160
+训练集类别分布: {'科技': 128, '体育': 128, '财经': 128, '教育': 128}
+开发集类别分布: {'财经': 32, '科技': 32, '教育': 32, '体育': 32}
+测试集类别分布: {'财经': 40, '科技': 40, '教育': 40, '体育': 40}
+
+[2] 分词与停用词过滤
+停用词数量: 30
+训练集处理后空文本数: 0
+开发集处理后空文本数: 0
+测试集处理后空文本数: 0
+
+[3] TF-IDF特征
+max_features: 5000
+min_df: 2
+max_df: 0.95
+ngram_range: (1, 1)
+X_train shape: (512, 3926)
+X_dev shape: (128, 3926)
+X_test shape: (160, 3926)
+词表大小: 3926
+
+[4] 输出文件
+train.csv: D:\Project\project_nlp\Nlp\P3\data\train.csv
+dev.csv: D:\Project\project_nlp\Nlp\P3\data\dev.csv
+test.csv: D:\Project\project_nlp\Nlp\P3\data\test.csv
+X_train_tfidf.npz: D:\Project\project_nlp\Nlp\P3\data\X_train_tfidf.npz
+X_dev_tfidf.npz: D:\Project\project_nlp\Nlp\P3\data\X_dev_tfidf.npz
+X_test_tfidf.npz: D:\Project\project_nlp\Nlp\P3\data\X_test_tfidf.npz
+y_train.npy: D:\Project\project_nlp\Nlp\P3\data\y_train.npy
+y_dev.npy: D:\Project\project_nlp\Nlp\P3\data\y_dev.npy
+y_test.npy: D:\Project\project_nlp\Nlp\P3\data\y_test.npy
+tfidf_vectorizer.joblib: D:\Project\project_nlp\Nlp\P3\data\tfidf_vectorizer.joblib

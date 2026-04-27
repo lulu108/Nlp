@@ -1,0 +1,48 @@
+# 分类训练数据格式说明
+
+默认训练文件路径：`data/train/classify_train.csv`
+
+## 必需字段
+
+- `text`：文本内容
+- `label`：类别标签（如 体育、科技、财经、教育）
+
+## 可选字段
+
+- `title`：标题。若存在，训练时会与 `text` 拼接用于特征提取。
+
+## 最小示例
+
+```csv
+text,label
+苹果发布了新款芯片和手机产品,科技
+这支球队赢得了本赛季冠军,体育
+```
+
+建议每个类别至少准备 20 条以上样本，以获得更稳定的效果。
+
+## Training Command
+
+Run the classifier training script from the `P4/` directory:
+
+```bash
+python scripts/train_classifier.py --data-path data/train/classify_train.csv
+```
+
+Required columns:
+
+- `text`
+- `label`
+
+Optional columns:
+
+- `title`
+
+The training script saves artifacts to:
+
+- `models/classifier/tfidf_vectorizer.pkl`
+- `models/classifier/svm_model.pkl`
+
+## Clustering Demo Reuse
+
+Rows from `classify_train.csv` can also be sampled for clustering demos. When these rows are reused with `/api/cluster`, the clustering module only uses text content and ignores the `label` column.

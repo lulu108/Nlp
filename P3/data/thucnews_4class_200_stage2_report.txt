@@ -1,0 +1,32 @@
+===== 阶段2：训练前预处理报告 =====
+输入文件: P3\data\thucnews_4class_200_clean.csv
+总样本数: 800
+
+[1] 分层划分
+训练集样本数: 640
+测试集样本数: 160
+训练集类别分布: {'体育': 160, '科技': 160, '财经': 160, '教育': 160}
+测试集类别分布: {'财经': 40, '科技': 40, '教育': 40, '体育': 40}
+
+[2] 分词与停用词过滤
+停用词数量: 30
+训练集处理后空文本数: 0
+测试集处理后空文本数: 0
+
+[3] TF-IDF特征
+max_features: 5000
+min_df: 2
+max_df: 0.95
+ngram_range: (1, 1)
+X_train shape: (640, 4702)
+X_test shape: (160, 4702)
+词表大小: 4702
+
+[4] 输出文件
+train.csv: P3\data\train.csv
+test.csv: P3\data\test.csv
+X_train_tfidf.npz: P3\data\X_train_tfidf.npz
+X_test_tfidf.npz: P3\data\X_test_tfidf.npz
+y_train.npy: P3\data\y_train.npy
+y_test.npy: P3\data\y_test.npy
+tfidf_vectorizer.joblib: P3\data\tfidf_vectorizer.joblib

@@ -1,0 +1,32 @@
+===== Stage-B preprocessing log =====
+input_file: P2\data\data550.txt
+parsed_records: 550
+head_orphan_lines: 0
+removed_empty_text: 0
+removed_short_text(<15): 0
+removed_exact_duplicates: 0
+removed_zero_token_docs: 0
+near_dup_scope: all
+removed_near_duplicates: 0
+near_dup_jaccard: 0.85
+near_dup_containment: 0.92
+near_dup_min_tokens: 12
+stopword_count: 107
+template_word_count: 34
+loaded_stopword_files: ['D:\\Project\\project_nlp\\Nlp\\P2\\data\\stopwords.txt']
+loaded_template_files: ['D:\\Project\\project_nlp\\Nlp\\P2\\data\\template_stopwords.txt']
+loaded_user_dicts: ['D:\\Project\\project_nlp\\Nlp\\P2\\data\\user_dict.txt']
+final_samples: 550
+label_distribution:
+- 娱乐: 110
+- 房产: 110
+- 体育: 110
+- 教育: 110
+- 科技: 110
+outputs:
+- D:\Project\project_nlp\Nlp\P2\data\raw_news_550.csv
+- D:\Project\project_nlp\Nlp\P2\data\news_stageB_550.csv
+- D:\Project\project_nlp\Nlp\P2\data\news_for_cluster_550.csv
+- D:\Project\project_nlp\Nlp\P2\data\stageB_top_tokens_550.csv
+- D:\Project\project_nlp\Nlp\P2\data\near_duplicates_removed_550.csv
+- D:\Project\project_nlp\Nlp\P2\data\process_log_550.txt

@@ -1,0 +1,20 @@
+===== 数据整理与预处理日志 =====
+输入文件: D:\Project\project_nlp\Nlp\P2\data\data500.txt
+解析记录数: 550
+异常孤立行数: 0
+空文本去除: 0
+过短文本去除(<15): 0
+完全重复去除: 0
+无有效token去除: 0
+最终样本数: 550
+标签分布:
+- 体育: 110
+- 科技: 110
+- 教育: 110
+- 房产: 110
+- 娱乐: 110
+输出文件:
+- D:\Project\project_nlp\Nlp\P2\data\raw_news_550.csv
+- D:\Project\project_nlp\Nlp\P2\data\news_stageB.csv
+- D:\Project\project_nlp\Nlp\P2\data\news_for_cluster.csv
+- D:\Project\project_nlp\Nlp\P2\data\stageB_top_tokens.csv

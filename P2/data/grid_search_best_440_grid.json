@@ -1,0 +1,16 @@
+{
+  "feature_mode": "char",
+  "max_df": 0.75,
+  "min_df": 3,
+  "ngram_min": 2,
+  "ngram_max": 4,
+  "max_features": 20000,
+  "sublinear_tf": true,
+  "n_init": 60,
+  "seed": 52,
+  "best_acc": 0.831818,
+  "best_nmi": 0.730531,
+  "best_ari": 0.639469,
+  "best_silhouette_cosine": 0.062024,
+  "grid_csv": "D:\\Project\\project_nlp\\Nlp\\P2\\data\\grid_search_kmeans_440_grid.csv"
+}

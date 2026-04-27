@@ -1,0 +1,348 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (malloc) failed to allocate 1048576 bytes for AllocateHeap
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is
+#     placed in the first 32GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (allocation.cpp:44), pid=6272, tid=17520
+#
+# JRE version:  (21.0.7+8) (build )
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (21.0.7+8-LTS-245, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -Xms512m -Xmx8g 
+
+Host: 12th Gen Intel(R) Core(TM) i9-12900H, 20 cores, 15G,  Windows 11 , 64 bit Build 26100 (10.0.26100.3775)
+Time: Mon Mar 23 14:32:43 2026  Windows 11 , 64 bit Build 26100 (10.0.26100.3775) elapsed time: 0.052096 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000019c206a55e0):  JavaThread "Unknown thread" [_thread_in_vm, id=17520, stack(0x0000003087400000,0x00000030875f0000) (1984K)]
+
+Stack: [0x0000003087400000,0x00000030875f0000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x6cae19]
+V  [jvm.dll+0x855741]
+V  [jvm.dll+0x857c6e]
+V  [jvm.dll+0x858343]
+V  [jvm.dll+0x27e0b6]
+V  [jvm.dll+0xbfa77]
+V  [jvm.dll+0x3307a5]
+V  [jvm.dll+0x328cf1]
+V  [jvm.dll+0x81eaf9]
+V  [jvm.dll+0x3bb211]
+V  [jvm.dll+0x807d78]
+V  [jvm.dll+0x4503ee]
+V  [jvm.dll+0x451fe1]
+C  [_jpype.cp36-win_amd64.pyd+0x2453d]  JPEnv::CreateJavaVM+0x2d  (jp_env.cpp:218)
+C  [_jpype.cp36-win_amd64.pyd+0x246e3]  JPEnv::loadJVM+0xc3  (jp_env.cpp:164)
+C  [_jpype.cp36-win_amd64.pyd+0x4178b]  PyJPModule::startup+0x23b  (pyjp_module.cpp:157)
+C  [python36.dll+0x1454d1]  _PyCFunction_FastCallDict+0x1e1  (methodobject.c:265)
+C  [python36.dll+0x145572]  _PyCFunction_FastCallKeywords+0x52  (methodobject.c:294)
+C  [python36.dll+0x1ccf7f]  call_function+0x12f  (ceval.c:4851)
+C  [python36.dll+0x1c80c1]  _PyEval_EvalFrameDefault+0xf11  (ceval.c:3336)
+C  [python36.dll+0x1cbd1e]  _PyEval_EvalCodeWithName+0x94e  (ceval.c:4166)
+C  [python36.dll+0x1cd258]  fast_function+0x138  (ceval.c:4992)
+C  [python36.dll+0x1ccfe7]  call_function+0x197  (ceval.c:4873)
+C  [python36.dll+0x1c9f70]  _PyEval_EvalFrameDefault+0x2dc0  (ceval.c:3352)
+C  [python36.dll+0x1cd0e2]  _PyFunction_FastCall+0x82  (ceval.c:4935)
+C  [python36.dll+0x1cd17e]  fast_function+0x5e  (ceval.c:4968)
+C  [python36.dll+0x1ccfe7]  call_function+0x197  (ceval.c:4873)
+C  [python36.dll+0x1c80c1]  _PyEval_EvalFrameDefault+0xf11  (ceval.c:3336)
+C  [python36.dll+0x1cbd1e]  _PyEval_EvalCodeWithName+0x94e  (ceval.c:4166)
+C  [python36.dll+0x1c7174]  PyEval_EvalCode+0x44  (ceval.c:737)
+C  [python36.dll+0x1c2d8b]  builtin_exec_impl+0x1eb  (bltinmodule.c:983)
+C  [python36.dll+0x1c1022]  builtin_exec+0x62  (bltinmodule.c.h:287)
+C  [python36.dll+0x1452c4]  PyCFunction_Call+0x154  (methodobject.c:150)
+C  [python36.dll+0x1cd683]  do_call_core+0x103  (ceval.c:5116)
+C  [python36.dll+0x1ca059]  _PyEval_EvalFrameDefault+0x2ea9  (ceval.c:3405)
+C  [python36.dll+0x1cbd1e]  _PyEval_EvalCodeWithName+0x94e  (ceval.c:4166)
+C  [python36.dll+0x1cd258]  fast_function+0x138  (ceval.c:4992)
+C  [python36.dll+0x1ccfe7]  call_function+0x197  (ceval.c:4873)
+C  [python36.dll+0x1c80c1]  _PyEval_EvalFrameDefault+0xf11  (ceval.c:3336)
+C  [python36.dll+0x1cd0e2]  _PyFunction_FastCall+0x82  (ceval.c:4935)
+C  [python36.dll+0x1cd17e]  fast_function+0x5e  (ceval.c:4968)
+C  [python36.dll+0x1ccfe7]  call_function+0x197  (ceval.c:4873)
+C  [python36.dll+0x1c80c1]  _PyEval_EvalFrameDefault+0xf11  (ceval.c:3336)
+C  [python36.dll+0x1cd0e2]  _PyFunction_FastCall+0x82  (ceval.c:4935)
+C  [python36.dll+0x1cd17e]  fast_function+0x5e  (ceval.c:4968)
+C  [python36.dll+0x1ccfe7]  call_function+0x197  (ceval.c:4873)
+C  [python36.dll+0x1c80c1]  _PyEval_EvalFrameDefault+0xf11  (ceval.c:3336)
+C  [python36.dll+0x1cd0e2]  _PyFunction_FastCall+0x82  (ceval.c:4935)
+C  [python36.dll+0x1cd17e]  fast_function+0x5e  (ceval.c:4968)
+C  [python36.dll+0x1ccfe7]  call_function+0x197  (ceval.c:4873)
+C  [python36.dll+0x1c80c1]  _PyEval_EvalFrameDefault+0xf11  (ceval.c:3336)
+C  [python36.dll+0x1cd0e2]  _PyFunction_FastCall+0x82  (ceval.c:4935)
+C  [python36.dll+0xf43ee]  _PyObject_FastCallDict+0x6e  (abstract.c:2310)
+C  [python36.dll+0xf522d]  _PyObject_CallMethodIdObjArgs+0x11d  (abstract.c:2797)
+C  [python36.dll+0x1ef3f4]  PyImport_ImportModuleLevelObject+0x2b4  (import.c:1578)
+C  [python36.dll+0x1cdba7]  import_name+0x1b7  (ceval.c:5251)
+C  [python36.dll+0x1c99e4]  _PyEval_EvalFrameDefault+0x2834  (ceval.c:2900)
+C  [python36.dll+0x1cbd1e]  _PyEval_EvalCodeWithName+0x94e  (ceval.c:4166)
+C  [python36.dll+0x21c85d]  run_mod+0x8d  (pythonrun.c:1026)
+C  [python36.dll+0x21c4d4]  PyRun_FileExFlags+0x104  (pythonrun.c:978)
+C  [python36.dll+0x21a47e]  PyRun_SimpleFileExFlags+0x2de  (pythonrun.c:422)
+C  [python36.dll+0x219173]  PyRun_AnyFileExFlags+0x63  (pythonrun.c:82)
+C  [python36.dll+0x85928]  run_file+0x158  (main.c:340)
+C  [python36.dll+0x8679b]  Py_Main+0xe2b  (main.c:810)
+C  [python.exe+0x1248]  __scrt_common_main_seh+0x10c  (exe_common.inl:288)
+C  [KERNEL32.DLL+0x2e8d7]
+C  [ntdll.dll+0xb14fc]
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ffdab08cc48, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+Total: 0
+
+Other Threads:
+  0x0000019ca976ced0 WorkerThread "GC Thread#0"                     [id=50424, stack(0x000000308a090000,0x000000308a280000) (1984K)]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffdaa7f5260]
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00007ffdab0fdf50] Heap_lock - owner thread: 0x0000019c206a55e0
+
+Heap address: 0x0000000600000000, size: 8192 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 1.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+ CardTable entry size: 512
+ Card Set container configuration: InlinePtr #cards 4 size 8 Array Of Cards #cards 32 size 80 Howl #buckets 8 coarsen threshold 7372 Howl Bitmap #cards 1024 size 144 coarsen threshold 921 Card regions per heap region 1 cards per card region 8192
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x0000000600000000, 0x0000000800000000)
+  region size 4096K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffdaabe3e79]
+GC Heap History (0 events):
+No events
+
+Dll operation events (1 events):
+Event: 0.031 Loaded shared library D:\Java\jdk-21_windows-x64_bin\bin\java.dll
+
+Deoptimization events (0 events):
+No events
+
+Classes loaded (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+ZGC Phase Switch (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+0x000000001cca0000 - 0x000000001ccbb000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\python.exe
+0x00007ffe46340000 - 0x00007ffe465a0000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffe44bc0000 - 0x00007ffe44c87000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ffe43ab0000 - 0x00007ffe43e7a000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ffe43ff0000 - 0x00007ffe4413b000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ffe311c0000 - 0x00007ffe311de000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\VCRUNTIME140.dll
+0x0000000060b40000 - 0x0000000060f80000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\python36.dll
+0x00007ffe44b20000 - 0x00007ffe44b84000 	C:\WINDOWS\System32\SHLWAPI.dll
+0x00007ffe446b0000 - 0x00007ffe44759000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffe44910000 - 0x00007ffe44984000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ffe45450000 - 0x00007ffe45566000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ffe45a10000 - 0x00007ffe45ac2000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ffe30f40000 - 0x00007ffe30f4b000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ffe44ce0000 - 0x00007ffe44d86000 	C:\WINDOWS\System32\sechost.dll
+0x00007ffe42b80000 - 0x00007ffe42b9c000 	C:\WINDOWS\SYSTEM32\CRYPTSP.dll
+0x00007ffe42380000 - 0x00007ffe423ba000 	C:\WINDOWS\system32\rsaenh.dll
+0x00007ffe42ba0000 - 0x00007ffe42bac000 	C:\WINDOWS\SYSTEM32\CRYPTBASE.dll
+0x00007ffe43690000 - 0x00007ffe43729000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ffe3ae80000 - 0x00007ffe3ae8f000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\python3.DLL
+0x00007ffdeb200000 - 0x00007ffdeb3a3000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_hashlib.pyd
+0x00007ffe45840000 - 0x00007ffe45a0c000 	C:\WINDOWS\System32\USER32.dll
+0x00007ffe43fc0000 - 0x00007ffe43fe7000 	C:\WINDOWS\System32\win32u.dll
+0x00007ffe45420000 - 0x00007ffe4544a000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ffe43730000 - 0x00007ffe43861000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ffe43e80000 - 0x00007ffe43f23000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ffe45350000 - 0x00007ffe4537f000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ffe081c0000 - 0x00007ffe08246000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\_jpype.cp36-win_amd64.pyd
+0x00007ffe27410000 - 0x00007ffe27499000 	C:\WINDOWS\SYSTEM32\MSVCP140.dll
+0x00007ffe274a0000 - 0x00007ffe274ac000 	C:\WINDOWS\SYSTEM32\VCRUNTIME140_1.dll
+0x0000000061840000 - 0x0000000061863000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_ctypes.pyd
+0x00007ffe44770000 - 0x00007ffe44906000 	C:\WINDOWS\System32\ole32.dll
+0x00007ffe44220000 - 0x00007ffe445a2000 	C:\WINDOWS\System32\combase.dll
+0x00007ffe44140000 - 0x00007ffe44216000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x0000000071080000 - 0x0000000072e11000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\.libs\libopenblas.WCDJNK7YVMPZQ2ME2ZZHJJRJ3JIKNDB7.gfortran-win_amd64.dll
+0x00007ffdb71f0000 - 0x00007ffdb74b9000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\core\_multiarray_umath.cp36-win_amd64.pyd
+0x00007ffe19dc0000 - 0x00007ffe19ddf000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\core\_multiarray_tests.cp36-win_amd64.pyd
+0x00007ffe3ae20000 - 0x00007ffe3ae29000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\linalg\lapack_lite.cp36-win_amd64.pyd
+0x00007ffe19530000 - 0x00007ffe1955a000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\linalg\_umath_linalg.cp36-win_amd64.pyd
+0x0000000061820000 - 0x0000000061838000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_bz2.pyd
+0x00007ffe194f0000 - 0x00007ffe1952e000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_lzma.pyd
+0x0000000060af0000 - 0x0000000060b3b000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_decimal.pyd
+0x00007ffe19b40000 - 0x00007ffe19b60000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\fft\_pocketfft_internal.cp36-win_amd64.pyd
+0x00007ffe02360000 - 0x00007ffe023ef000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\mtrand.cp36-win_amd64.pyd
+0x00007ffe18a50000 - 0x00007ffe18a7a000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\bit_generator.cp36-win_amd64.pyd
+0x00007ffe17320000 - 0x00007ffe17351000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_common.cp36-win_amd64.pyd
+0x00007ffe13ca0000 - 0x00007ffe13ce0000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_bounded_integers.cp36-win_amd64.pyd
+0x00007ffe18a30000 - 0x00007ffe18a48000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_mt19937.cp36-win_amd64.pyd
+0x00007ffe14240000 - 0x00007ffe14257000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_philox.cp36-win_amd64.pyd
+0x00007ffe13df0000 - 0x00007ffe13e05000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_pcg64.cp36-win_amd64.pyd
+0x00007ffe11d10000 - 0x00007ffe11d22000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_sfc64.cp36-win_amd64.pyd
+0x00007ffdff560000 - 0x00007ffdff604000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random\_generator.cp36-win_amd64.pyd
+0x00007ffddd010000 - 0x00007ffddd222000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_ssl.pyd
+0x00007ffe43930000 - 0x00007ffe43aa7000 	C:\WINDOWS\System32\CRYPT32.dll
+0x0000000061800000 - 0x0000000061814000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\_socket.pyd
+0x0000000060ae0000 - 0x0000000060ae9000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\select.pyd
+0x00007ffe42920000 - 0x00007ffe4298a000 	C:\WINDOWS\system32\mswsock.dll
+0x0000000060a00000 - 0x0000000060adf000 	D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs\unicodedata.pyd
+0x00007ffdaa4c0000 - 0x00007ffdab1da000 	D:\Java\jdk-21_windows-x64_bin\bin\server\jvm.dll
+0x00007ffe379b0000 - 0x00007ffe379e6000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ffe42150000 - 0x00007ffe421ae000 	C:\WINDOWS\SYSTEM32\POWRPROF.dll
+0x00007ffe42130000 - 0x00007ffe42144000 	C:\WINDOWS\SYSTEM32\UMPDC.dll
+0x00007ffe31190000 - 0x00007ffe3119a000 	D:\Java\jdk-21_windows-x64_bin\bin\jimage.dll
+0x00007ffe40920000 - 0x00007ffe40b61000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ffe22760000 - 0x00007ffe22799000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ffe0fff0000 - 0x00007ffe1000f000 	D:\Java\jdk-21_windows-x64_bin\bin\java.dll
+0x00007ffe42420000 - 0x00007ffe4243a000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2;C:\WINDOWS\SYSTEM32;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\DLLs;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\.libs;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\core;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\linalg;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\fft;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\random;D:\Java\jdk-21_windows-x64_bin\bin\server;D:\Java\jdk-21_windows-x64_bin\bin
+
+VM Arguments:
+jvm_args: -Xms512m -Xmx8g 
+java_command: <unknown>
+java_class_path (initial): D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\pyhanlp\static\hanlp-1.8.6.jar;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\pyhanlp\static;.;D:\Java\jdk-21_windows-x64_bin\lib\dt.jar;D:\Java\jdk-21_windows-x64_bin\lib\tools.jar;D:\Java\jdk-21_windows-x64_bin\lib;
+Launcher Type: generic
+
+[Global flags]
+     intx CICompilerCount                          = 12                                        {product} {ergonomic}
+     uint ConcGCThreads                            = 4                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 15                                        {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 4194304                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 536870912                                 {product} {command line}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 8589934592                                {product} {command line}
+   size_t MinHeapDeltaBytes                        = 4194304                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 536870912                                 {product} {command line}
+    uintx NonNMethodCodeHeapSize                   = 7602480                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122027880                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122027880                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 8589934592                             {manageable} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags foldmultilines=false
+ #1: stderr all=off uptime,level,tags foldmultilines=false
+
+Environment Variables:
+JAVA_HOME=D:\Java\jdk-21_windows-x64_bin
+CLASSPATH=.;D:\Java\jdk-21_windows-x64_bin\lib\dt.jar;D:\Java\jdk-21_windows-x64_bin\lib\tools.jar;D:\Java\jdk-21_windows-x64_bin\lib;
+PATH=D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\Library\mingw-w64\bin;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\Library\usr\bin;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\Library\bin;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\Scripts;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\bin;D:\Google_Downloads\Anaconda\anaconda\condabin;c:\Users\21956\.vscode\extensions\vadimcn.vscode-lldb-1.12.1\bin;c:\Users\21956\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\debugCommand;c:\Users\21956\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\copilotCli;D:\Downloads\Microsoft VS Code;D:\Google_Downloads\mingw64\mingw64\bin;D:\python;C:\Program Files (x86)\VMware\VMware Workstation\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit;D:\Program Files\bin;D:\Google_Downloads\x86_64-8.1.0-release-win32-seh-rt_v6-rev0\mingw64\bin;D:\Java\jdk-21_windows-x64_bin\bin;node_modules\npm\bin;D:\python\Scripts;D:\Google_Downloads\opencv\build\x64\vc16\bin;D:\feige\Tools\mingw730_64\bin;D:\feige\5.14.2\mingw73_64\bin;D:\Google_Downloads\cmake-3.25.0-windows-i386\cmake-3.25.0-windows-i386\bin;D:\Google_Downloads\opencv\build\install\x64\mingw\bin;webdriver\chromedriver-win64;D:\Google_Downloads\Anaconda\anaconda\Scripts;D:\Github\bin;D:\Google_Downloads\Anaconda\anaconda\Library\bin;\Git\cmd;D:\Google_Downloads\Git\cmd;D:\Google_Downloads\Git\bin;D:\Google_Downloads\Git\mingw64\libexec\git-core;D:\Program Files\bin;D:\Google_Downloads\Study\nvm\nvm-1.2.2-setup\nvm_downloads\nvm;D:\Google_Downloads\Study\nvm\nvm-1.2.2-setup\nvm_downloads\nvmnodejs\nodejs;D:\Google_Downloads\maven\apache-maven-3.9.10-bin\apache-maven-3.9.10\bin;D:\Gdownload\tomcat\apache-tomcat-10.1.45-windows-x64\apache-tomcat-10.1.45\bin;\bin;D:\Google_Downloads\Trainnig_course\rabbitmq\rabbitmq_server-4.1.4\sbin;D:\Google_Downloads\gpu\xftp;D:\Google_Downloads\SoftTest_Course\jmeter\apache-jmeter-5.5\apache-jmeter-5.5\bin;D:\Google_Downloads\Anaconda\Anaconda(1);D:\Google_Downloads\Anaconda\Anaconda(1)\Library\mingw-w64\bin;D:\Google_Downloads\Anaconda\Anaconda(1)\Library\usr\bin;D:\Google_Downloads\Anaconda\Anaconda(1)\Library\bin;D:\Google_Downloads\Anaconda\Anaconda(1)\Scripts;C:\Users\21956\AppData\Local\Microsoft\WindowsApps;D:\Downloads\Microsoft VS Code\bin;D:\python\PyCharm 2023.1.4\bin;C:\Users\21956\AppData\Roaming\npm;C:\Users\21956\AppData\Local\Programs\Ollama;C:\Users\21956\AppData\Local\JetBrains\Toolbox\scripts;C:\Users\21956\AppData\Local\Microsoft\WindowsApps;D:\Google_Downloads\Study\nvm\nvm-1.2.2-setup\nvm_downloads\nvm;D:\Google_Downloads\Study\nvm\nvm-1.2.2-setup\nvm_downloads\nvmnodejs\nodejs;D:\Google_Downloads\coder\webstorm\WebStorm 2025.1.3\bin;.;D:\Google_Downloads\AI_Downloads\Cursor\cursor_new\resources\app\bin;D:\Google_Downloads\latex\texlive\2026\bin\windows;c:\Users\21956\.vscode\extensions\ms-python.debugpy-2025.18.0-win32-x64\bundled\scripts\noConfigScripts;D:\Google_Downloads\Anaconda\anaconda\envs\hanlp2\lib\site-packages\numpy\.libs
+USERNAME=21956
+LANG=zh_CN.UTF-8
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 154 Stepping 3, GenuineIntel
+TMP=C:\Users\21956\AppData\Local\Temp
+TEMP=C:\Users\21956\AppData\Local\Temp
+
+
+
+
+Periodic native trim disabled
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 26100 (10.0.26100.3775)
+OS uptime: 6 days 5:40 hours
+Hyper-V role detected
+
+CPU: total 20 (initial active 20) (10 cores per cpu, 2 threads per core) family 6 model 154 stepping 3 microcode 0x41b, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, sha, fma, vzeroupper, clflush, clflushopt, clwb, hv, serialize, rdtscp, rdpid, fsrm, f16c, cet_ibt, cet_ss
+Processor Information for processor 0
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 1
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 2
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 3
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 4
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 5
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 6
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 7
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 8
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 9
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 10
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 11
+  Max Mhz: 2500, Current Mhz: 2500, Mhz Limit: 2500
+Processor Information for processor 12
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 13
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 14
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 15
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 16
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 17
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 18
+  Max Mhz: 1800, Current Mhz: 1800, Mhz Limit: 1800
+Processor Information for processor 19
+  Max Mhz: 1800, Current Mhz: 1500, Mhz Limit: 1800
+
+Memory: 4k page, system-wide physical 16108M (2591M free)
+TotalPageFile size 51271M (AvailPageFile size 0M)
+current process WorkingSet (physical memory assigned to process): 56M, peak: 56M
+current process commit charge ("private bytes"): 2671M, peak: 2673M
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (21.0.7+8-LTS-245) for windows-amd64 JRE (21.0.7+8-LTS-245), built on 2025-02-21T05:11:27Z by "mach5one" with MS VC++ 17.6 (VS2022)
+
+END.

@@ -1,0 +1,124 @@
+===== 传统机器学习多模型对比实验报告 =====
+
+[1] 数据规模
+X_train shape = (512, 3926)
+X_dev shape = (128, 3926)
+X_test shape = (160, 3926)
+auto_dev_split_used = False
+
+[2] Dev参数搜索结果
+NB | alpha=0.1 | dev_acc=0.9453 | dev_macro_p=0.9453 | dev_macro_r=0.9453 | dev_macro_f1=0.9452
+NB | alpha=0.5 | dev_acc=0.9453 | dev_macro_p=0.9447 | dev_macro_r=0.9453 | dev_macro_f1=0.9447
+NB | alpha=1.0 | dev_acc=0.9531 | dev_macro_p=0.9535 | dev_macro_r=0.9531 | dev_macro_f1=0.9526
+NB | alpha=2.0 | dev_acc=0.9609 | dev_macro_p=0.9609 | dev_macro_r=0.9609 | dev_macro_f1=0.9606
+LR | C=0.5 | dev_acc=0.9531 | dev_macro_p=0.9575 | dev_macro_r=0.9531 | dev_macro_f1=0.9526
+LR | C=1.0 | dev_acc=0.9531 | dev_macro_p=0.9575 | dev_macro_r=0.9531 | dev_macro_f1=0.9526
+LR | C=2.0 | dev_acc=0.9531 | dev_macro_p=0.9575 | dev_macro_r=0.9531 | dev_macro_f1=0.9526
+LR | C=5.0 | dev_acc=0.9609 | dev_macro_p=0.9646 | dev_macro_r=0.9609 | dev_macro_f1=0.9608
+SVM | C=0.5 | dev_acc=0.9609 | dev_macro_p=0.9646 | dev_macro_r=0.9609 | dev_macro_f1=0.9608
+SVM | C=1.0 | dev_acc=0.9609 | dev_macro_p=0.9646 | dev_macro_r=0.9609 | dev_macro_f1=0.9608
+SVM | C=2.0 | dev_acc=0.9609 | dev_macro_p=0.9646 | dev_macro_r=0.9609 | dev_macro_f1=0.9608
+SVM | C=5.0 | dev_acc=0.9609 | dev_macro_p=0.9646 | dev_macro_r=0.9609 | dev_macro_f1=0.9608
+
+[3] Test最终结果汇总
+model best_param  best_dev_macro_f1  test_acc  test_macro_p  test_macro_r  test_macro_f1  test_weighted_f1
+  SVM      C=0.5           0.960813   0.96250      0.963393       0.96250       0.962645          0.962645
+   LR      C=5.0           0.960813   0.95625      0.957674       0.95625       0.956457          0.956457
+   NB  alpha=2.0           0.960554   0.95625      0.956379       0.95625       0.956165          0.956165
+
+[4] 模型：NB
+best_param = alpha=2.0
+best_dev_macro_f1 = 0.9606
+test_acc = 0.9563
+test_macro_p = 0.9564
+test_macro_r = 0.9563
+test_macro_f1 = 0.9562
+test_weighted_f1 = 0.9562
+分类报告：
+              precision    recall  f1-score   support
+
+          体育     0.9512    0.9750    0.9630        40
+          科技     0.9487    0.9250    0.9367        40
+          财经     0.9512    0.9750    0.9630        40
+          教育     0.9744    0.9500    0.9620        40
+
+    accuracy                         0.9563       160
+   macro avg     0.9564    0.9563    0.9562       160
+weighted avg     0.9564    0.9563    0.9562       160
+
+混淆矩阵：
+[[39  1  0  0]
+ [ 1 37  1  1]
+ [ 1  0 39  0]
+ [ 0  1  1 38]]
+
+模型文件: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\nb_best_model.joblib
+预测结果: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\nb_test_predictions.csv
+混淆矩阵图: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\nb_test_confusion_matrix.png
+分类报告文件: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\nb_classification_report.txt
+
+[4] 模型：LR
+best_param = C=5.0
+best_dev_macro_f1 = 0.9608
+test_acc = 0.9563
+test_macro_p = 0.9577
+test_macro_r = 0.9563
+test_macro_f1 = 0.9565
+test_weighted_f1 = 0.9565
+分类报告：
+              precision    recall  f1-score   support
+
+          体育     0.9750    0.9750    0.9750        40
+          科技     0.9070    0.9750    0.9398        40
+          财经     0.9487    0.9250    0.9367        40
+          教育     1.0000    0.9500    0.9744        40
+
+    accuracy                         0.9563       160
+   macro avg     0.9577    0.9563    0.9565       160
+weighted avg     0.9577    0.9563    0.9565       160
+
+混淆矩阵：
+[[39  1  0  0]
+ [ 0 39  1  0]
+ [ 1  2 37  0]
+ [ 0  1  1 38]]
+
+模型文件: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\lr_best_model.joblib
+预测结果: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\lr_test_predictions.csv
+混淆矩阵图: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\lr_test_confusion_matrix.png
+分类报告文件: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\lr_classification_report.txt
+
+[4] 模型：SVM
+best_param = C=0.5
+best_dev_macro_f1 = 0.9608
+test_acc = 0.9625
+test_macro_p = 0.9634
+test_macro_r = 0.9625
+test_macro_f1 = 0.9626
+test_weighted_f1 = 0.9626
+分类报告：
+              precision    recall  f1-score   support
+
+          体育     0.9750    0.9750    0.9750        40
+          科技     0.9286    0.9750    0.9512        40
+          财经     0.9500    0.9500    0.9500        40
+          教育     1.0000    0.9500    0.9744        40
+
+    accuracy                         0.9625       160
+   macro avg     0.9634    0.9625    0.9626       160
+weighted avg     0.9634    0.9625    0.9626       160
+
+混淆矩阵：
+[[39  1  0  0]
+ [ 0 39  1  0]
+ [ 1  1 38  0]
+ [ 0  1  1 38]]
+
+模型文件: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\svm_best_model.joblib
+预测结果: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\svm_test_predictions.csv
+混淆矩阵图: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\svm_test_confusion_matrix.png
+分类报告文件: D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\svm_classification_report.txt
+
+[5] 汇总文件
+summary_csv = D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\classical_models_summary.csv
+dev_search_details_csv = D:\Project\project_nlp\Nlp\P3\data\classical_model_outputs\dev_search_details.csv
