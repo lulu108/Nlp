@@ -1,2 +1,2 @@
-﻿n_samples,n_clusters,vocab_size,max_df,min_df,ngram_range,nmi,ari,acc,silhouette_cosine
-550,5,4694,0.8,4,"(1, 1)",0.675831,0.505978,0.763636,0.046207
+﻿tag,seed,n_samples,n_clusters,vocab_size,preset,feature_mode,max_df,min_df,ngram_range,max_features,sublinear_tf,n_init,nmi,ari,acc,silhouette_cosine
+,42,440,4,4210,none,word,0.8,4,"(1, 1)",,True,50,0.703923,0.598749,0.818182,0.054675

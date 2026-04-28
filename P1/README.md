@@ -98,6 +98,29 @@
 3. （可选）python P1/BiLSTMCRF/03shrink_fasttext_vec.py
 4. python P1/BiLSTMCRF/train_bilstm_crf.py
 
+### 4.4 统一评测汇总（新增）
+
+在完成上述任意实验链路后，可执行统一汇总脚本：
+
+1. 运行命令：python P1/scripts/collect_metrics.py
+2. 生成文件：
+
+- P1/reports/experiment_summary.md
+- P1/reports/metrics_summary.csv
+
+如果希望汇总结果优先反映你刚运行的主线 HMM（03train_hmm.py），建议先保存最新日志：
+
+- PowerShell：python P1/03train_hmm.py | Out-File -FilePath P1/logs/hmm_main_latest.txt -Encoding utf8
+- CMD：python P1/03train_hmm.py > P1\\logs\\hmm_main_latest.txt
+
+然后再执行：python P1/scripts/collect_metrics.py
+
+3. 汇总策略：
+
+- 优先解析现有日志/输出文件，不重跑训练。
+- 对格式不一致日志做兼容解析（含 UTF-8/UTF-16）。
+- 无法解析的指标统一标记为“待补充”，不做虚构填值。
+
 ## 5. TODO 清单（只整理，不改代码）
 
 ### 5.1 已完成能力
