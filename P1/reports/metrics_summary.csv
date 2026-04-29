@@ -1,4 +1,4 @@
-﻿实验链路,标签准确率,词级Precision,词级Recall,词级F1,交叉验证Mean,交叉验证Std,训练样本数,测试样本数,指标来源,备注
-P1 主线 HMM,0.8148,0.7789,0.7108,0.7213,待补充,待补充,310,77,P1/logs/hmm_main_latest.txt,优先解析最新主线 HMM 控制台日志
-P1/test2 迭代版 HMM,待补充,待补充,待补充,待补充,待补充,待补充,260,64,P1/test2/output/top_error_words.txt; P1/test2/output/train_top_errors.txt,当前输出以错误分析为主，缺少可直接解析的准确率/F1 数值日志
-P1/BiLSTMCRF 深度学习版本,0.8373,0.8248,0.7959,0.8057,待补充,待补充,402,51,P1/BiLSTMCRF/output/confusion_matrix.tsv,由混淆矩阵反推宏平均 P/R/F1，非训练日志直接打印值
+﻿实验链路,标签准确率,词级Precision,词级Recall,词级F1,token数,PER实体数,LOC实体数,ORG实体数,交叉验证Mean,交叉验证Std,训练样本数,测试样本数,指标来源,备注
+P1 主线 HMM,0.8148,0.7789,0.7108,0.7213,待补充,待补充,待补充,待补充,待补充,待补充,310,77,P1/logs/hmm_main_latest.txt,优先解析最新主线 HMM 控制台日志
+P1/test2 迭代版 HMM,待补充,待补充,待补充,待补充,待补充,待补充,待补充,待补充,待补充,待补充,260,64,P1/test2/output/top_error_words.txt; P1/test2/output/train_top_errors.txt,当前输出以错误分析为主，缺少可直接解析的准确率/F1 数值日志
+P1/BiLSTMCRF 深度学习版本,0.8373,0.8248,0.7959,0.8057,待补充,待补充,待补充,待补充,待补充,待补充,402,51,P1/BiLSTMCRF/output/confusion_matrix.tsv,由混淆矩阵反推宏平均 P/R/F1，非训练日志直接打印值

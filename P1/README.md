@@ -17,7 +17,7 @@
 - 已完成约 80%（基础链路完整，含 HMM 与 BiLSTM-CRF 两条训练线）。
 - 主要缺口：
   - 缺统一实验报告模板与可复现实验对照表。
-  - 缺 NLP4J 版本实现与对齐评测（当前目录未发现相关脚本）。
+  - NLP4J 对照实验已补到 `P1/nlp4j_baseline/`，但当前仍缺真实 NLP4J jar/API 适配与真实指标。
   - 缺自动化测试与一键评估汇总脚本。
 
 ## 2. 目录与脚本检查结论
@@ -121,6 +121,35 @@
 - 对格式不一致日志做兼容解析（含 UTF-8/UTF-16）。
 - 无法解析的指标统一标记为“待补充”，不做虚构填值。
 
+### 4.5 NLP4J 对照实验（新增）
+
+P1 已在现有 `P1/nlp4j_baseline/` 目录上补充第一版 Java/Maven 命令行骨架，用于课程要求中的 NLP4J 序列标注对照实验。当前状态如下：
+
+- 已完成 `sample_input.txt`、`sample_output.txt`、`convert_nlp4j_output.py`、汇总占位说明。
+- 已补充 `pom.xml` 与 `src/main/java/Nlp4jSequenceLabelingDemo.java`。
+- 当前项目形态是 **Java/Maven 命令行程序**，不是 Spring Boot。
+- JDK 目标版本为 `17`。
+
+当前运行方式：
+
+1. `cd P1/nlp4j_baseline`
+2. `mvn compile`
+3. `mvn exec:java`
+
+转换脚本仍保持可用：
+
+1. 如果你已有真实 NLP4J 输出，可保存为 `P1/nlp4j_baseline/real_output.txt`。
+2. 执行 `python P1/nlp4j_baseline/convert_nlp4j_output.py --input P1/nlp4j_baseline/real_output.txt`
+3. 若不传 `--input`，默认读取 `P1/nlp4j_baseline/sample_output.txt`
+
+统一汇总脚本 `python P1/scripts/collect_metrics.py` 会继续保留 NLP4J 占位逻辑；但在没有真实 NLP4J jar 与 API 适配前，当前不会生成真实 NLP4J 指标，Accuracy / Precision / Recall / F1 仍应视为“待补充”。
+
+下一步需要完成：
+
+- 接入真实 NLP4J jar 或确认可用 Maven 坐标。
+- 在 `Nlp4jSequenceLabelingDemo.java` 中按真实 API 完成分词、词性标注与实体识别适配。
+- 生成真实 `output/nlp4j_result.tsv` 后再进入统一汇总。
+
 ## 5. TODO 清单（只整理，不改代码）
 
 ### 5.1 已完成能力
@@ -134,9 +163,9 @@
 
 ### 5.2 缺失或不完整能力
 
-- 缺统一实验结果汇总表（主线、test2、BiLSTMCRF 口径未统一）。
+- 已新增统一实验结果汇总表 (P1/reports/)，但 test2 结构化指标仍待补充。
 - 缺自动化回归评测脚本（当前依赖人工运行与观察输出）。
-- 缺 NLP4J 实现与对照实验（目录中未发现 NLP4J 代码与配置）。
+- 已新增 NLP4J 对照实验目录、转换脚本与 Java/Maven 命令行骨架，但当前若无真实 NLP4J jar/API，NLP4J 指标仍显示为“待补充”。
 - 缺固定版本依赖锁定说明（例如 HanLP 词典加载行为在不同环境可能差异）。
 
 ### 5.3 后续建议新增/修改文件（规划项）
@@ -156,17 +185,17 @@
 
 ## 6. 实验要求对应关系
 
-| 实验要求                                       | 当前实现情况               | 对应文件                                                                                            |
-| ---------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
-| 文本预处理（清洗、分句、去噪）                 | 已完成                     | P1/01preprocess.py, P1/test2/01preprocess.py                                                        |
-| 构建 BMES 标注语料                             | 已完成                     | P1/02build_bmes_dataset.py, P1/test2/02build_bmes_dataset.py, P1/BiLSTMCRF/01build_bmes_from_raw.py |
-| HMM 训练与解码（Viterbi）                      | 已完成                     | P1/03train_hmm.py, P1/test2/03train_hmm.py                                                          |
-| 评估指标（Accuracy、P/R/F1、Confusion Matrix） | 主线已完成，test2 为简化版 | P1/03train_hmm.py, P1/BiLSTMCRF/train_bilstm_crf.py                                                 |
-| NER 结果展示                                   | 已完成                     | P1/04ner_hanlp.py, P1/output/ner_hanlp.txt                                                          |
-| 错误驱动迭代（词典更新）                       | 已完成（test2）            | P1/test2/04update_dict.py, P1/test2/output/top_error_words.txt                                      |
-| 深度学习对照（BiLSTM-CRF）                     | 已完成                     | P1/BiLSTMCRF/train_bilstm_crf.py                                                                    |
-| NLP4J 对照实现                                 | 未完成（未发现）           | 待新增目录与脚本                                                                                    |
+| 实验要求                                       | 当前实现情况                     | 对应文件                                                                                                               |
+| ---------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 文本预处理（清洗、分句、去噪）                 | 已完成                           | P1/01preprocess.py, P1/test2/01preprocess.py                                                                           |
+| 构建 BMES 标注语料                             | 已完成                           | P1/02build_bmes_dataset.py, P1/test2/02build_bmes_dataset.py, P1/BiLSTMCRF/01build_bmes_from_raw.py                    |
+| HMM 训练与解码（Viterbi）                      | 已完成                           | P1/03train_hmm.py, P1/test2/03train_hmm.py                                                                             |
+| 评估指标（Accuracy、P/R/F1、Confusion Matrix） | 主线已完成，test2 为简化版       | P1/03train_hmm.py, P1/BiLSTMCRF/train_bilstm_crf.py                                                                    |
+| NER 结果展示                                   | 已完成                           | P1/04ner_hanlp.py, P1/output/ner_hanlp.txt                                                                             |
+| 错误驱动迭代（词典更新）                       | 已完成（test2）                  | P1/test2/04update_dict.py, P1/test2/output/top_error_words.txt                                                         |
+| 深度学习对照（BiLSTM-CRF）                     | 已完成                           | P1/BiLSTMCRF/train_bilstm_crf.py                                                                                       |
+| NLP4J 对照实现                                 | 第一版骨架已完成，待接入真实 API | P1/nlp4j_baseline/README.md, P1/nlp4j_baseline/pom.xml, P1/nlp4j_baseline/src/main/java/Nlp4jSequenceLabelingDemo.java |
 
 ## 7. 结论
 
-P1 当前已具备可运行、可评估、可扩展的中文分词实验框架。主线 HMM 与 BiLSTM-CRF 均可作为课程实验的核心实现，test2 提供了错误驱动的迭代能力。后续优先事项建议聚焦在统一评测口径与补齐 NLP4J 对照实现，以提升实验完整性与报告可复现性。
+P1 当前已具备可运行、可评估、可扩展的中文分词实验框架。主线 HMM 与 BiLSTM-CRF 均可作为课程实验的核心实现，test2 提供了错误驱动的迭代能力。NLP4J 对照实验现已补到 Java/Maven 命令行骨架阶段，后续优先事项建议聚焦在统一评测口径以及补齐真实 NLP4J jar/API 适配，以提升实验完整性与报告可复现性。

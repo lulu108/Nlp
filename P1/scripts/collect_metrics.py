@@ -185,6 +185,10 @@ def parse_hmm_main() -> Dict[str, str]:
             "词级Precision": fmt_metric(macro_p),
             "词级Recall": fmt_metric(macro_r),
             "词级F1": fmt_metric(macro_f1),
+            "token数": "待补充",
+            "PER实体数": "待补充",
+            "LOC实体数": "待补充",
+            "ORG实体数": "待补充",
             "交叉验证Mean": "待补充",
             "交叉验证Std": "待补充",
             "训练样本数": str(train_samples) if train_samples is not None else "待补充",
@@ -222,6 +226,10 @@ def parse_hmm_main() -> Dict[str, str]:
         "词级Precision": fmt_metric(macro_p),
         "词级Recall": fmt_metric(macro_r),
         "词级F1": fmt_metric(macro_f1),
+        "token数": "待补充",
+        "PER实体数": "待补充",
+        "LOC实体数": "待补充",
+        "ORG实体数": "待补充",
         "交叉验证Mean": fmt_metric(cv_mean),
         "交叉验证Std": fmt_metric(cv_std),
         "训练样本数": str(train_samples) if train_samples is not None else "待补充",
@@ -242,12 +250,73 @@ def parse_hmm_test2() -> Dict[str, str]:
         "词级Precision": "待补充",
         "词级Recall": "待补充",
         "词级F1": "待补充",
+        "token数": "待补充",
+        "PER实体数": "待补充",
+        "LOC实体数": "待补充",
+        "ORG实体数": "待补充",
         "交叉验证Mean": "待补充",
         "交叉验证Std": "待补充",
         "训练样本数": str(train_count) if train_count else "待补充",
         "测试样本数": str(test_count) if test_count else "待补充",
         "指标来源": "P1/test2/output/top_error_words.txt; P1/test2/output/train_top_errors.txt",
         "备注": "当前输出以错误分析为主，缺少可直接解析的准确率/F1 数值日志",
+    }
+
+
+def parse_nlp4j_baseline() -> Dict[str, str]:
+    result_path = P1_DIR / "nlp4j_baseline" / "output" / "nlp4j_result.tsv"
+    txt = read_text_auto(result_path)
+
+    token_count = None
+    per_count = 0
+    loc_count = 0
+    org_count = 0
+
+    if txt:
+        data_lines = []
+        for raw_line in txt.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.lower().startswith("sentence_id\t"):
+                continue
+            data_lines.append(line)
+
+        valid_rows = 0
+        for line in data_lines:
+            parts = line.split("\t")
+            if len(parts) != 4:
+                continue
+            _, _token, _pos, entity = parts
+            valid_rows += 1
+            if entity == "PER":
+                per_count += 1
+            elif entity == "LOC":
+                loc_count += 1
+            elif entity == "ORG":
+                org_count += 1
+
+        token_count = valid_rows if valid_rows > 0 else None
+
+    has_result = token_count is not None
+    note = "已检测到转换结果；真实 Accuracy/Precision/Recall/F1 仍待补充" if has_result else "尚未生成转换结果；真实指标待补充"
+
+    return {
+        "实验链路": "P1/nlp4j_baseline NLP4J 对照实验",
+        "标签准确率": "待补充",
+        "词级Precision": "待补充",
+        "词级Recall": "待补充",
+        "词级F1": "待补充",
+        "token数": str(token_count) if token_count is not None else "待补充",
+        "PER实体数": str(per_count) if has_result else "待补充",
+        "LOC实体数": str(loc_count) if has_result else "待补充",
+        "ORG实体数": str(org_count) if has_result else "待补充",
+        "交叉验证Mean": "待补充",
+        "交叉验证Std": "待补充",
+        "训练样本数": "待补充",
+        "测试样本数": "待补充",
+        "指标来源": "P1/nlp4j_baseline/output/nlp4j_result.tsv",
+        "备注": note,
     }
 
 
@@ -265,6 +334,10 @@ def parse_bilstm_crf() -> Dict[str, str]:
             "词级Precision": "待补充",
             "词级Recall": "待补充",
             "词级F1": "待补充",
+            "token数": "待补充",
+            "PER实体数": "待补充",
+            "LOC实体数": "待补充",
+            "ORG实体数": "待补充",
             "交叉验证Mean": "待补充",
             "交叉验证Std": "待补充",
             "训练样本数": str(train_count) if train_count else "待补充",
@@ -280,6 +353,10 @@ def parse_bilstm_crf() -> Dict[str, str]:
         "词级Precision": fmt_metric(p),
         "词级Recall": fmt_metric(r),
         "词级F1": fmt_metric(f1),
+        "token数": "待补充",
+        "PER实体数": "待补充",
+        "LOC实体数": "待补充",
+        "ORG实体数": "待补充",
         "交叉验证Mean": "待补充",
         "交叉验证Std": "待补充",
         "训练样本数": str(train_count) if train_count else "待补充",
@@ -323,6 +400,10 @@ def write_csv(rows: List[Dict[str, str]], csv_path: Path) -> None:
         "词级Precision",
         "词级Recall",
         "词级F1",
+        "token数",
+        "PER实体数",
+        "LOC实体数",
+        "ORG实体数",
         "交叉验证Mean",
         "交叉验证Std",
         "训练样本数",
@@ -355,11 +436,11 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append("")
 
     lines.append("## 2. 统一指标总表")
-    lines.append("| 实验链路 | 标签准确率 | 词级Precision | 词级Recall | 词级F1 | 交叉验证Mean | 交叉验证Std | 训练样本数 | 测试样本数 |")
-    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    lines.append("| 实验链路 | 标签准确率 | 词级Precision | 词级Recall | 词级F1 | token数 | PER实体数 | LOC实体数 | ORG实体数 | 交叉验证Mean | 交叉验证Std | 训练样本数 | 测试样本数 |")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     for row in rows:
         lines.append(
-            f"| {row['实验链路']} | {row['标签准确率']} | {row['词级Precision']} | {row['词级Recall']} | {row['词级F1']} | {row['交叉验证Mean']} | {row['交叉验证Std']} | {row['训练样本数']} | {row['测试样本数']} |"
+            f"| {row['实验链路']} | {row['标签准确率']} | {row['词级Precision']} | {row['词级Recall']} | {row['词级F1']} | {row['token数']} | {row['PER实体数']} | {row['LOC实体数']} | {row['ORG实体数']} | {row['交叉验证Mean']} | {row['交叉验证Std']} | {row['训练样本数']} | {row['测试样本数']} |"
         )
     lines.append("")
 
@@ -387,7 +468,16 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append(f"- 备注: {bilstm.get('备注', '待补充')}")
     lines.append("")
 
-    lines.append("## 6. NER 结果样例")
+    nlp4j = by_chain.get("P1/nlp4j_baseline NLP4J 对照实验", {})
+    lines.append("## 6. NLP4J 对照实验")
+    lines.append(f"- 当前状态: {nlp4j.get('备注', '待补充')}")
+    lines.append(f"- 转换结果: {nlp4j.get('token数', '待补充')} 个 token, PER {nlp4j.get('PER实体数', '待补充')} 个, LOC {nlp4j.get('LOC实体数', '待补充')} 个, ORG {nlp4j.get('ORG实体数', '待补充')} 个")
+    lines.append(f"- Accuracy/Precision/Recall/F1: {nlp4j.get('标签准确率', '待补充')} / {nlp4j.get('词级Precision', '待补充')} / {nlp4j.get('词级Recall', '待补充')} / {nlp4j.get('词级F1', '待补充')}")
+    lines.append(f"- 指标来源: {nlp4j.get('指标来源', '待补充')}")
+    lines.append("- 说明: 当前仅做转换与占位汇总，不把 sample_output.txt 当作真实实验指标。")
+    lines.append("")
+
+    lines.append("## 7. NER 结果样例")
     if not ner_samples:
         lines.append("- 待补充（未解析到 P1/output/ner_hanlp.txt 样例）。")
     else:
@@ -399,15 +489,15 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
             lines.append(f"- 机构名: {item['机构名']}")
             lines.append("")
 
-    lines.append("## 7. 当前不足")
+    lines.append("## 8. 当前不足")
     lines.append("- test2 当前缺少结构化评测日志，准确率与 F1 暂无法自动汇总。")
     lines.append("- BiLSTM-CRF 当前主要从混淆矩阵反推指标，缺少统一文本日志沉淀。")
     lines.append("- 三条链路的指标命名和落盘格式仍未完全统一。")
     lines.append("")
 
-    lines.append("## 8. 下一步需要补 NLP4J")
-    lines.append("- 新增 NLP4J 基线实现与运行脚本，补齐第四条对照实验链路。")
-    lines.append("- 将 NLP4J 的 Accuracy/F1 纳入同一份 metrics_summary.csv。")
+    lines.append("## 9. 下一步需要补 NLP4J")
+    lines.append("- 若后续接入真实 NLP4J 运行环境，可将 Accuracy/F1 纳入同一份 metrics_summary.csv。")
+    lines.append("- 也可补充标准答案文件，将转换结果与真实指标一起评估。")
 
     return "\n".join(lines).rstrip() + "\n"
 
