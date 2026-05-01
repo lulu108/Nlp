@@ -41,6 +41,7 @@
 
 ```bash
 cd P1/nlp4j_baseline
+mvn dependency:tree
 mvn compile
 mvn exec:java
 ```
@@ -99,3 +100,11 @@ P1/nlp4j_baseline/sample_output.txt
 - 现在已补齐 Java/Maven 命令行工程骨架。
 - 当前还没有真实调用 NLP4J。
 - 下一步需要补充真实 NLP4J jar 或已确认可用的 Maven 坐标，并在 `Nlp4jSequenceLabelingDemo.java` 中完成 API 适配。
+
+## 8. NLP4J 依赖接入尝试
+
+- 当前选择的 NLP4J 版本：`edu.emory.mathcs.nlp:nlp4j-api:1.1.2`
+- Maven 依赖是否可解析：未验证（请运行 `mvn dependency:tree` 和 `mvn compile`）
+- 是否已经真实调用 API：否
+- 是否支持中文：未确认（需查官方文档与示例）
+- Accuracy/F1：待补充

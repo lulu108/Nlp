@@ -6,7 +6,7 @@
 
 说明：
 1. 仅解析现有日志/结果文件，不触发训练。
-2. 对缺失或无法解析的指标统一标记为“待补充”。
+2. 对缺失或无法解析的指标统一标记为"待补充"。
 """
 
 from __future__ import annotations
@@ -71,10 +71,6 @@ def count_non_empty_lines(path: Path) -> int:
 
 
 def parse_tag_table_macro_f1(log_text: str, section_title: str) -> Tuple[Optional[float], Optional[float], Optional[float]]:
-    # 解析类似：
-    # [Test Final] 各标签 P/R/F1
-    # Tag     Precision       Recall  F1
-    # B       0.8000          0.8741  0.8354
     pattern = re.compile(
         rf"\[{re.escape(section_title)}\]\s*各标签 P/R/F1\s*\n"
         r"Tag\s+Precision\s+Recall\s+F1\s*\n"
@@ -108,8 +104,6 @@ def parse_tag_table_macro_f1(log_text: str, section_title: str) -> Tuple[Optiona
 
 
 def parse_per_tag_metrics(log_text: str) -> Tuple[Optional[float], Optional[float], Optional[float]]:
-    # 解析 03train_hmm.py 的输出格式：
-    # B: P=0.8167 R=0.8887 F1=0.8512
     rows = re.findall(r"^[BMES]:\s*P=([0-9.]+)\s*R=([0-9.]+)\s*F1=([0-9.]+)", log_text, flags=re.MULTILINE)
     if not rows:
         return None, None, None
@@ -240,7 +234,6 @@ def parse_hmm_main() -> Dict[str, str]:
 
 
 def parse_hmm_test2() -> Dict[str, str]:
-    # test2 目前仅检测到错误样例与错词输出，未发现结构化数值指标日志
     train_count = count_non_empty_lines(P1_DIR / "test2" / "datasets" / "auto" / "train.txt")
     test_count = count_non_empty_lines(P1_DIR / "test2" / "datasets" / "auto" / "test.txt")
 
@@ -509,6 +502,7 @@ def main() -> None:
         parse_hmm_main(),
         parse_hmm_test2(),
         parse_bilstm_crf(),
+        parse_nlp4j_baseline(),
     ]
     ner_samples = parse_ner_samples(limit=3)
 
