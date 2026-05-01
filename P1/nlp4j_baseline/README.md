@@ -103,8 +103,10 @@ P1/nlp4j_baseline/sample_output.txt
 
 ## 8. NLP4J 依赖接入尝试
 
-- 当前选择的 NLP4J 版本：`edu.emory.mathcs.nlp:nlp4j-api:1.1.2`
-- Maven 依赖是否可解析：未验证（请运行 `mvn dependency:tree` 和 `mvn compile`）
+- 原先尝试 `edu.emory.mathcs.nlp:nlp4j-api:1.1.2`，但当前 Maven 仓库无法解析该依赖。
+- 当前改为尝试 `org.nlp4j:nlp4j-core:1.3.7.19`。
+- `nlp4j-core` 可能只是核心模块，不一定直接提供中文分词/NER。
+- 当前主要目标是完成公开 NLP4J 依赖接入验证。
 - 是否已经真实调用 API：否
 - 是否支持中文：未确认（需查官方文档与示例）
 - Accuracy/F1：待补充
