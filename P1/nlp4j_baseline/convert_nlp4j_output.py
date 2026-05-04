@@ -40,6 +40,8 @@ def parse_rows(text: str, source: Path) -> List[Tuple[int, str, str, str]]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
+        if line_no == 1 and line.lower() == "sentence_id\ttoken\tpos\tentity":
+            continue
         parts = line.split("\t")
         if len(parts) != 4:
             raise ValueError(f"格式错误: {source} 第 {line_no} 行应为 4 列(sentence_id, token, pos, entity)，实际为 {len(parts)} 列")
