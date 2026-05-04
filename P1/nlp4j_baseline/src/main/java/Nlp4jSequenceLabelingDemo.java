@@ -20,13 +20,13 @@ public class Nlp4jSequenceLabelingDemo {
     private static final Path DEFAULT_INPUT_IN_ROOT = Paths.get("sample_input.txt");
     private static final Path OUTPUT_PATH = Paths.get("output", "nlp4j_result.tsv");
     private static final Path DICT_DIR = Paths.get("dict");
+    private static final Path COMMON_DICT = DICT_DIR.resolve("common_words.txt");
     private static final Path PERSON_DICT = DICT_DIR.resolve("person.txt");
     private static final Path LOCATION_DICT = DICT_DIR.resolve("location.txt");
     private static final Path ORG_DICT = DICT_DIR.resolve("organization.txt");
 
     public static void main(String[] args) throws IOException {
-        Path inputPath = resolveInputPath(args);
-        List<String> sentences = readSentences(inputPath);
+        List<String> sentences = resolveSentences(args);
         DictionaryResources dictionaries = loadDictionaries();
         List<LabeledTokenRow> rows = runRuleBasedBaseline(sentences, dictionaries);
         writeRows(rows, OUTPUT_PATH);
@@ -34,20 +34,21 @@ public class Nlp4jSequenceLabelingDemo {
         System.out.println("Saved: " + OUTPUT_PATH.toAbsolutePath());
     }
 
-    private static Path resolveInputPath(String[] args) {
+    private static List<String> resolveSentences(String[] args) throws IOException {
         if (args.length > 0 && !args[0].isBlank()) {
-            Path explicitPath = Paths.get(args[0]);
+            String arg = args[0].trim();
+            Path explicitPath = Paths.get(arg);
             if (Files.exists(explicitPath)) {
-                return explicitPath;
+                return readSentences(explicitPath);
             }
-            throw new IllegalArgumentException("Input file not found: " + explicitPath.toAbsolutePath());
+            return List.of(arg);
         }
 
         if (Files.exists(DEFAULT_INPUT_IN_SUBDIR)) {
-            return DEFAULT_INPUT_IN_SUBDIR;
+            return readSentences(DEFAULT_INPUT_IN_SUBDIR);
         }
         if (Files.exists(DEFAULT_INPUT_IN_ROOT)) {
-            return DEFAULT_INPUT_IN_ROOT;
+            return readSentences(DEFAULT_INPUT_IN_ROOT);
         }
 
         throw new IllegalStateException(
@@ -64,6 +65,7 @@ public class Nlp4jSequenceLabelingDemo {
     }
 
     private static DictionaryResources loadDictionaries() throws IOException {
+        List<String> common = readDictLines(COMMON_DICT);
         List<String> person = readDictLines(PERSON_DICT);
         List<String> location = readDictLines(LOCATION_DICT);
         List<String> organization = readDictLines(ORG_DICT);
@@ -73,8 +75,11 @@ public class Nlp4jSequenceLabelingDemo {
         addToEntityMap(entityMap, location, "LOC");
         addToEntityMap(entityMap, organization, "ORG");
 
-        Map<Character, List<String>> byFirstChar = indexByFirstChar(entityMap.keySet());
-        return new DictionaryResources(entityMap, byFirstChar);
+        Set<String> commonWords = new HashSet<>(common);
+        Set<String> allWords = new HashSet<>(entityMap.keySet());
+        allWords.addAll(commonWords);
+        Map<Character, List<String>> byFirstChar = indexByFirstChar(allWords);
+        return new DictionaryResources(entityMap, byFirstChar, commonWords);
     }
 
     private static List<String> readDictLines(Path path) throws IOException {
@@ -142,7 +147,7 @@ public class Nlp4jSequenceLabelingDemo {
                 index += 1;
             }
 
-            String pos = guessPos(token, entity);
+            String pos = guessPos(token, entity, dictionaries.commonWords());
             rows.add(new LabeledTokenRow(sentenceId, token, pos, entity));
         }
         return rows;
@@ -162,7 +167,7 @@ public class Nlp4jSequenceLabelingDemo {
         return null;
     }
 
-    private static String guessPos(String token, String entity) {
+    private static String guessPos(String token, String entity, Set<String> commonWords) {
         if (!"O".equals(entity)) {
             return "PROPN";
         }
@@ -171,6 +176,12 @@ public class Nlp4jSequenceLabelingDemo {
         }
         if (VERB_WORDS.contains(token)) {
             return "VERB";
+        }
+        if (PARTICLE_WORDS.contains(token)) {
+            return "PART";
+        }
+        if (commonWords.contains(token)) {
+            return "NOUN";
         }
         if (token.length() >= 2) {
             return "NOUN";
@@ -222,9 +233,11 @@ public class Nlp4jSequenceLabelingDemo {
         }
     }
 
-    private record DictionaryResources(Map<String, String> entityMap, Map<Character, List<String>> byFirstChar) {
+    private record DictionaryResources(Map<String, String> entityMap, Map<Character, List<String>> byFirstChar,
+                                       Set<String> commonWords) {
     }
 
     private static final Set<String> ADP_WORDS = new HashSet<>(List.of("在", "于", "从", "到"));
     private static final Set<String> VERB_WORDS = new HashSet<>(List.of("参加", "发布", "毕业", "工作", "前往"));
+    private static final Set<String> PARTICLE_WORDS = new HashSet<>(List.of("的", "了", "吗", "呢", "吧", "啊"));
 }

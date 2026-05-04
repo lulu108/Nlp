@@ -47,6 +47,12 @@ mvn exec:java
 python convert_nlp4j_output.py --input output/nlp4j_result.tsv
 ```
 
+命令行传入单句：
+
+```bash
+mvn exec:java -Dexec.args="张三在北京参加清华大学举办的自然语言处理会议。"
+```
+
 默认行为：
 
 - 优先读取 `input/sample_input.txt`
@@ -100,8 +106,9 @@ P1/nlp4j_baseline/sample_output.txt
 当前以 `nlp4j-core` 的框架能力为基础，补充自定义词典和规则，完成中文序列标注演示：
 
 - 词典路径：`P1/nlp4j_baseline/dict/`
+- 词典来源建议：P1 自动抽词 + jieba 默认词典 + THUOCL
 - 规则：最长匹配切分 + 词典实体映射 + 简单 POS 规则
-- 说明：这不是训练好的 NLP4J NER 模型，结果不作为 HMM/BiLSTM-CRF 同口径 Accuracy/F1
+- 说明：这不是训练好的 NLP4J NER 模型，结果不与 HMM/BiLSTM-CRF 同口径 Accuracy/F1 比较
 
 输出文件：
 
@@ -111,6 +118,19 @@ P1/nlp4j_baseline/sample_output.txt
 
 ```text
 sentence_id    token    pos    entity
+```
+
+外部词典放置说明：
+
+- `P1/nlp4j_baseline/dict/external/jieba_dict.txt`
+- `P1/nlp4j_baseline/dict/external/thuocl/`
+- `P1/output/ner_hanlp.txt`
+- `P1/datasets/auto/train.txt`、`dev.txt`、`test.txt`
+
+生成规则词典：
+
+```bash
+python P1/nlp4j_baseline/scripts/build_external_dicts.py
 ```
 
 ## 8. 当前状态结论
