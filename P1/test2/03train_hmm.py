@@ -13,10 +13,18 @@
 
 from pathlib import Path
 from collections import defaultdict
+import json
 import math
+from typing import Dict, List, Tuple
 
 TRAIN_PATH = Path("./P1/test2/datasets/auto/train.txt")
 TEST_PATH = Path("./P1/test2/datasets/auto/test.txt")
+OUTPUT_DIR = Path("./P1/test2/output")
+METRICS_JSON = OUTPUT_DIR / "metrics.json"
+METRICS_SUMMARY = OUTPUT_DIR / "metrics_summary.txt"
+CONFUSION_TSV = OUTPUT_DIR / "confusion_matrix.tsv"
+CONFUSION_PNG = OUTPUT_DIR / "confusion_matrix.png"
+LABEL_REPORT_TSV = OUTPUT_DIR / "label_report.tsv"
 
 STATES = ["B", "M", "E", "S"]
 
@@ -202,6 +210,8 @@ class HMM:
 def evaluate(model: HMM, samples):
     total_tags = 0
     correct_tags = 0
+    label_to_idx = {label: idx for idx, label in enumerate(STATES)}
+    confusion = [[0 for _ in STATES] for _ in STATES]
 
     show_results = []
 
@@ -215,6 +225,8 @@ def evaluate(model: HMM, samples):
             total_tags += 1
             if t1 == t2:
                 correct_tags += 1
+            if t1 in label_to_idx and t2 in label_to_idx:
+                confusion[label_to_idx[t1]][label_to_idx[t2]] += 1
 
         if len(show_results) < 5:
             pred_words = model.tags_to_words(chars, pred_tags)
@@ -227,7 +239,88 @@ def evaluate(model: HMM, samples):
             })
 
     acc = correct_tags / total_tags if total_tags > 0 else 0
-    return acc, show_results
+    label_report, macro_p, macro_r, macro_f1 = build_label_report(confusion)
+    return acc, show_results, confusion, label_report, macro_p, macro_r, macro_f1
+
+
+def build_label_report(confusion: List[List[int]]) -> Tuple[List[Dict[str, float]], float, float, float]:
+    report: List[Dict[str, float]] = []
+    precisions: List[float] = []
+    recalls: List[float] = []
+    f1s: List[float] = []
+
+    for idx, label in enumerate(STATES):
+        tp = confusion[idx][idx]
+        fp = sum(confusion[row][idx] for row in range(len(STATES))) - tp
+        fn = sum(confusion[idx][col] for col in range(len(STATES))) - tp
+        support = sum(confusion[idx])
+
+        precision = tp / (tp + fp) if (tp + fp) else 0.0
+        recall = tp / (tp + fn) if (tp + fn) else 0.0
+        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+
+        report.append({
+            "label": label,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "support": support,
+        })
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+
+    macro_p = sum(precisions) / len(precisions) if precisions else 0.0
+    macro_r = sum(recalls) / len(recalls) if recalls else 0.0
+    macro_f1 = sum(f1s) / len(f1s) if f1s else 0.0
+    return report, macro_p, macro_r, macro_f1
+
+
+def write_confusion_tsv(confusion: List[List[int]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["true\\pred\t" + "\t".join(STATES)]
+    for label, row in zip(STATES, confusion):
+        lines.append(label + "\t" + "\t".join(str(x) for x in row))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_label_report_tsv(report: List[Dict[str, float]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    header = "label\tprecision\trecall\tf1\tsupport"
+    lines = [header]
+    for row in report:
+        lines.append(
+            f"{row['label']}\t{row['precision']:.6f}\t{row['recall']:.6f}\t{row['f1']:.6f}\t{int(row['support'])}"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_confusion_png(confusion: List[List[int]], path: Path) -> None:
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception as exc:
+        print(f"[WARN] Matplotlib unavailable, skip confusion_matrix.png: {exc}")
+        return
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(6, 5))
+    im = ax.imshow(confusion, cmap="Blues")
+    ax.set_xticks(range(len(STATES)), STATES)
+    ax.set_yticks(range(len(STATES)), STATES)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_title("P1/test2 HMM BMES Confusion Matrix")
+
+    for i in range(len(STATES)):
+        for j in range(len(STATES)):
+            ax.text(j, i, str(confusion[i][j]), ha="center", va="center", color="black")
+
+    fig.colorbar(im, ax=ax)
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
 
 
 def main():
@@ -250,7 +343,7 @@ def main():
         row = {s2: round(model.trans[s1][s2], 4) for s2 in STATES}
         print(f"{s1} -> {row}")
 
-    acc, examples = evaluate(model, test_samples)
+    acc, examples, confusion, label_report, macro_p, macro_r, macro_f1 = evaluate(model, test_samples)
     print(f"\n测试集标签级准确率: {acc:.4f}")
 
     print("\n===== 预测样例 =====")
@@ -261,6 +354,37 @@ def main():
         print("预测分词:", "/".join(ex["pred_words"]))
         print("真实标签:", " ".join(ex["true_tags"]))
         print("预测标签:", " ".join(ex["pred_tags"]))
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    write_confusion_tsv(confusion, CONFUSION_TSV)
+    write_confusion_png(confusion, CONFUSION_PNG)
+    write_label_report_tsv(label_report, LABEL_REPORT_TSV)
+
+    metrics = {
+        "chain": "P1/test2 迭代版 HMM",
+        "tag_accuracy": acc,
+        "macro_precision": macro_p,
+        "macro_recall": macro_r,
+        "macro_f1": macro_f1,
+        "train_size": len(train_samples),
+        "test_size": len(test_samples),
+        "source": "P1/test2/03train_hmm.py",
+        "confusion_matrix_path": str(CONFUSION_TSV),
+        "label_report_path": str(LABEL_REPORT_TSV),
+    }
+    METRICS_JSON.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    summary_lines = [
+        f"标签准确率: {acc:.6f}",
+        f"Macro Precision: {macro_p:.6f}",
+        f"Macro Recall: {macro_r:.6f}",
+        f"Macro F1: {macro_f1:.6f}",
+        f"训练样本数: {len(train_samples)}",
+        f"测试样本数: {len(test_samples)}",
+        f"混淆矩阵文件路径: {CONFUSION_TSV}",
+        f"标签报告文件路径: {LABEL_REPORT_TSV}",
+    ]
+    METRICS_SUMMARY.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

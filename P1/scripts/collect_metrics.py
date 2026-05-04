@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -234,6 +235,44 @@ def parse_hmm_main() -> Dict[str, str]:
 
 
 def parse_hmm_test2() -> Dict[str, str]:
+    metrics_path = P1_DIR / "test2" / "output" / "metrics.json"
+    if metrics_path.exists():
+        raw = read_text_auto(metrics_path)
+        try:
+            metrics = json.loads(raw)
+        except Exception:
+            metrics = {}
+
+        tag_acc = metrics.get("tag_accuracy")
+        macro_p = metrics.get("macro_precision")
+        macro_r = metrics.get("macro_recall")
+        macro_f1 = metrics.get("macro_f1")
+        train_count = metrics.get("train_size")
+        test_count = metrics.get("test_size")
+        confusion_path = metrics.get("confusion_matrix_path", "P1/test2/output/confusion_matrix.tsv")
+        label_report_path = metrics.get("label_report_path", "P1/test2/output/label_report.tsv")
+
+        return {
+            "实验链路": "P1/test2 迭代版 HMM",
+            "标签准确率": fmt_metric(tag_acc),
+            "词级Precision": fmt_metric(macro_p),
+            "词级Recall": fmt_metric(macro_r),
+            "词级F1": fmt_metric(macro_f1),
+            "token数": "待补充",
+            "PER实体数": "待补充",
+            "LOC实体数": "待补充",
+            "ORG实体数": "待补充",
+            "交叉验证Mean": "待补充",
+            "交叉验证Std": "待补充",
+            "训练样本数": str(train_count) if train_count is not None else "待补充",
+            "测试样本数": str(test_count) if test_count is not None else "待补充",
+            "指标来源": f"{metrics_path}; {confusion_path}; {label_report_path}",
+            "备注": "已生成 test2 结构化评估输出 (metrics.json / confusion_matrix / label_report)",
+            "混淆矩阵路径": confusion_path,
+            "标签报告路径": label_report_path,
+            "has_metrics": True,
+        }
+
     train_count = count_non_empty_lines(P1_DIR / "test2" / "datasets" / "auto" / "train.txt")
     test_count = count_non_empty_lines(P1_DIR / "test2" / "datasets" / "auto" / "test.txt")
 
@@ -253,6 +292,9 @@ def parse_hmm_test2() -> Dict[str, str]:
         "测试样本数": str(test_count) if test_count else "待补充",
         "指标来源": "P1/test2/output/top_error_words.txt; P1/test2/output/train_top_errors.txt",
         "备注": "当前输出以错误分析为主，缺少可直接解析的准确率/F1 数值日志",
+        "混淆矩阵路径": "待补充",
+        "标签报告路径": "待补充",
+        "has_metrics": False,
     }
 
 
@@ -412,7 +454,7 @@ def write_csv(rows: List[Dict[str, str]], csv_path: Path) -> None:
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         for row in rows:
-            writer.writerow(row)
+            writer.writerow({field: row.get(field, "") for field in fields})
 
 
 def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> str:
@@ -452,6 +494,8 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append(f"- 标签准确率: {hmm_test2.get('标签准确率', '待补充')}")
     lines.append(f"- 词级 Precision/Recall/F1: {hmm_test2.get('词级Precision', '待补充')} / {hmm_test2.get('词级Recall', '待补充')} / {hmm_test2.get('词级F1', '待补充')}")
     lines.append(f"- 训练/测试样本数: {hmm_test2.get('训练样本数', '待补充')} / {hmm_test2.get('测试样本数', '待补充')}")
+    lines.append(f"- 混淆矩阵: {hmm_test2.get('混淆矩阵路径', '待补充')}")
+    lines.append(f"- 标签报告: {hmm_test2.get('标签报告路径', '待补充')}")
     lines.append(f"- 指标来源: {hmm_test2.get('指标来源', '待补充')}")
     lines.append(f"- 备注: {hmm_test2.get('备注', '待补充')}")
     lines.append("")
@@ -486,7 +530,10 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
             lines.append("")
 
     lines.append("## 8. 当前不足")
-    lines.append("- test2 当前缺少结构化评测日志，准确率与 F1 暂无法自动汇总。")
+    if hmm_test2.get("has_metrics"):
+        lines.append("- test2 已生成结构化评测输出（metrics.json/混淆矩阵/标签报告）。")
+    else:
+        lines.append("- test2 当前缺少结构化评测日志，准确率与 F1 暂无法自动汇总。")
     lines.append("- BiLSTM-CRF 当前主要从混淆矩阵反推指标，缺少统一文本日志沉淀。")
     lines.append("- 三条链路的指标命名和落盘格式仍未完全统一。")
     lines.append("")

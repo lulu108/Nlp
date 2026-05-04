@@ -1,0 +1,8 @@
+标签准确率: 0.766138
+Macro Precision: 0.755385
+Macro Recall: 0.688926
+Macro F1: 0.695756
+训练样本数: 260
+测试样本数: 64
+混淆矩阵文件路径: P1\test2\output\confusion_matrix.tsv
+标签报告文件路径: P1\test2\output\label_report.tsv

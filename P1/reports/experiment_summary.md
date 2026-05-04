@@ -9,7 +9,7 @@
 | 实验链路 | 标签准确率 | 词级Precision | 词级Recall | 词级F1 | token数 | PER实体数 | LOC实体数 | ORG实体数 | 交叉验证Mean | 交叉验证Std | 训练样本数 | 测试样本数 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | P1 主线 HMM | 0.8148 | 0.7789 | 0.7108 | 0.7213 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 310 | 77 |
-| P1/test2 迭代版 HMM | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 260 | 64 |
+| P1/test2 迭代版 HMM | 0.7661 | 0.7554 | 0.6889 | 0.6958 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 260 | 64 |
 | P1/BiLSTMCRF 深度学习版本 | 0.8373 | 0.8248 | 0.7959 | 0.8057 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 待补充 | 402 | 51 |
 | P1/nlp4j_baseline NLP4J 对照实验 | 待补充 | 待补充 | 待补充 | 待补充 | 10 | 1 | 1 | 1 | 待补充 | 待补充 | 待补充 | 待补充 |
 
@@ -21,11 +21,13 @@
 - 备注: 优先解析最新主线 HMM 控制台日志
 
 ## 4. test2 迭代链路结果
-- 标签准确率: 待补充
-- 词级 Precision/Recall/F1: 待补充 / 待补充 / 待补充
+- 标签准确率: 0.7661
+- 词级 Precision/Recall/F1: 0.7554 / 0.6889 / 0.6958
 - 训练/测试样本数: 260 / 64
-- 指标来源: P1/test2/output/top_error_words.txt; P1/test2/output/train_top_errors.txt
-- 备注: 当前输出以错误分析为主，缺少可直接解析的准确率/F1 数值日志
+- 混淆矩阵: P1\test2\output\confusion_matrix.tsv
+- 标签报告: P1\test2\output\label_report.tsv
+- 指标来源: D:\Project\project_nlp\Nlp\P1\test2\output\metrics.json; P1\test2\output\confusion_matrix.tsv; P1\test2\output\label_report.tsv
+- 备注: 已生成 test2 结构化评估输出 (metrics.json / confusion_matrix / label_report)
 
 ## 5. BiLSTM-CRF 结果
 - 标签准确率: 0.8373
@@ -61,7 +63,7 @@
 - 机构名: 无
 
 ## 8. 当前不足
-- test2 当前缺少结构化评测日志，准确率与 F1 暂无法自动汇总。
+- test2 已生成结构化评测输出（metrics.json/混淆矩阵/标签报告）。
 - BiLSTM-CRF 当前主要从混淆矩阵反推指标，缺少统一文本日志沉淀。
 - 三条链路的指标命名和落盘格式仍未完全统一。
 

@@ -1,7 +1,9 @@
 import re
 from pathlib import Path
 from typing import List
-
+'''
+清洗与预处理
+'''
 INPUT_PATH = Path("./P1/test2/input/data.txt")
 OUTPUT_PATH = Path("./P1/test2/intermediate/news_clean.txt")
 

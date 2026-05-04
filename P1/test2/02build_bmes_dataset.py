@@ -9,6 +9,8 @@
 文件格式：
 每行一个样本，格式为：
 原句 \t 空格分隔的字序列 \t 空格分隔的BMES标签序列 \t 空格分隔的分词结果
+
+生成 BMES 训练/测试数据
 """
 
 from pathlib import Path

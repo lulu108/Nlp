@@ -1,0 +1,12 @@
+{
+  "chain": "P1/test2 迭代版 HMM",
+  "tag_accuracy": 0.7661383842288365,
+  "macro_precision": 0.755384985915788,
+  "macro_recall": 0.6889255984909401,
+  "macro_f1": 0.6957561225517229,
+  "train_size": 260,
+  "test_size": 64,
+  "source": "P1/test2/03train_hmm.py",
+  "confusion_matrix_path": "P1\\test2\\output\\confusion_matrix.tsv",
+  "label_report_path": "P1\\test2\\output\\label_report.tsv"
+}
