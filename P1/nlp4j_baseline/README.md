@@ -44,6 +44,7 @@ cd P1/nlp4j_baseline
 mvn dependency:tree
 mvn compile
 mvn exec:java
+python convert_nlp4j_output.py --input output/nlp4j_result.tsv
 ```
 
 默认行为：
@@ -94,14 +95,32 @@ P1/nlp4j_baseline/sample_output.txt
 - `P1/nlp4j_baseline/output/nlp4j_result.tsv`
 - `P1/nlp4j_baseline/output/nlp4j_entities.tsv`
 
-## 7. 当前状态结论
+## 7. 基于 nlp4j-core 的词典规则型 baseline
+
+当前以 `nlp4j-core` 的框架能力为基础，补充自定义词典和规则，完成中文序列标注演示：
+
+- 词典路径：`P1/nlp4j_baseline/dict/`
+- 规则：最长匹配切分 + 词典实体映射 + 简单 POS 规则
+- 说明：这不是训练好的 NLP4J NER 模型，结果不作为 HMM/BiLSTM-CRF 同口径 Accuracy/F1
+
+输出文件：
+
+- `P1/nlp4j_baseline/output/nlp4j_result.tsv`
+
+字段：
+
+```text
+sentence_id    token    pos    entity
+```
+
+## 8. 当前状态结论
 
 - 第一版 `sample_input.txt`、`sample_output.txt`、转换脚本、汇总占位已经存在。
 - 现在已补齐 Java/Maven 命令行工程骨架。
 - 当前还没有真实调用 NLP4J。
 - 下一步需要补充真实 NLP4J jar 或已确认可用的 Maven 坐标，并在 `Nlp4jSequenceLabelingDemo.java` 中完成 API 适配。
 
-## 8. NLP4J 依赖接入尝试
+## 9. NLP4J 依赖接入尝试
 
 - 原先尝试 `edu.emory.mathcs.nlp:nlp4j-api:1.1.2`，但当前 Maven 仓库无法解析该依赖。
 - 当前改为尝试 `org.nlp4j:nlp4j-core:1.3.7.19`。
@@ -110,3 +129,22 @@ P1/nlp4j_baseline/sample_output.txt
 - 是否已经真实调用 API：否
 - 是否支持中文：未确认（需查官方文档与示例）
 - Accuracy/F1：待补充
+
+## 10. nlp4j-stanford 可行性探索
+
+目标：评估 `org.nlp4j:nlp4j-stanford:1.3.5.0` 是否能作为中文 token/POS/NER 扩展方案。
+
+执行方式：
+
+```bash
+cd P1/nlp4j_baseline
+mvn dependency:get "-Dartifact=org.nlp4j:nlp4j-stanford:1.3.5.0" -Dtransitive=false
+```
+
+结论要点：
+
+- 该依赖可以从公开 Maven 仓库下载。
+- jar 内部包含 `StanfordPosAnnotator` 等 POS 相关类，但未看到 NER/NamedEntity 相关类。
+- 其 POM 依赖中 `stanford-corenlp` 与 `stanford-corenlp:models` 为 `provided`，需要额外提供。
+- 是否包含中文模型仍未确认，若要中文 NER 通常需要额外 Stanford 中文模型包。
+- 因此当前阶段不建议直接将 `nlp4j-stanford` 写入 `pom.xml` 作为中文序列标注方案。

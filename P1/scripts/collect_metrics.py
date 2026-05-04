@@ -292,7 +292,10 @@ def parse_nlp4j_baseline() -> Dict[str, str]:
         token_count = valid_rows if valid_rows > 0 else None
 
     has_result = token_count is not None
-    note = "已检测到转换结果；真实 Accuracy/Precision/Recall/F1 仍待补充" if has_result else "尚未生成转换结果；真实指标待补充"
+    if has_result:
+        note = "词典规则型 NLP4J baseline，非训练式模型指标；Accuracy/F1 仍待补充"
+    else:
+        note = "词典规则型 NLP4J baseline 尚未生成结果；Accuracy/F1 待补充"
 
     return {
         "实验链路": "P1/nlp4j_baseline NLP4J 对照实验",
