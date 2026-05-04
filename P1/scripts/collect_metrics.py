@@ -177,9 +177,9 @@ def parse_hmm_main() -> Dict[str, str]:
         return {
             "实验链路": "P1 主线 HMM",
             "标签准确率": fmt_metric(tag_acc),
-            "词级Precision": fmt_metric(macro_p),
-            "词级Recall": fmt_metric(macro_r),
-            "词级F1": fmt_metric(macro_f1),
+            "标签级Macro Precision": fmt_metric(macro_p),
+            "标签级Macro Recall": fmt_metric(macro_r),
+            "标签级Macro F1": fmt_metric(macro_f1),
             "token数": "待补充",
             "PER实体数": "待补充",
             "LOC实体数": "待补充",
@@ -218,9 +218,9 @@ def parse_hmm_main() -> Dict[str, str]:
     return {
         "实验链路": "P1 主线 HMM",
         "标签准确率": fmt_metric(tag_acc),
-        "词级Precision": fmt_metric(macro_p),
-        "词级Recall": fmt_metric(macro_r),
-        "词级F1": fmt_metric(macro_f1),
+        "标签级Macro Precision": fmt_metric(macro_p),
+        "标签级Macro Recall": fmt_metric(macro_r),
+        "标签级Macro F1": fmt_metric(macro_f1),
         "token数": "待补充",
         "PER实体数": "待补充",
         "LOC实体数": "待补充",
@@ -255,9 +255,9 @@ def parse_hmm_test2() -> Dict[str, str]:
         return {
             "实验链路": "P1/test2 迭代版 HMM",
             "标签准确率": fmt_metric(tag_acc),
-            "词级Precision": fmt_metric(macro_p),
-            "词级Recall": fmt_metric(macro_r),
-            "词级F1": fmt_metric(macro_f1),
+            "标签级Macro Precision": fmt_metric(macro_p),
+            "标签级Macro Recall": fmt_metric(macro_r),
+            "标签级Macro F1": fmt_metric(macro_f1),
             "token数": "待补充",
             "PER实体数": "待补充",
             "LOC实体数": "待补充",
@@ -279,9 +279,9 @@ def parse_hmm_test2() -> Dict[str, str]:
     return {
         "实验链路": "P1/test2 迭代版 HMM",
         "标签准确率": "待补充",
-        "词级Precision": "待补充",
-        "词级Recall": "待补充",
-        "词级F1": "待补充",
+        "标签级Macro Precision": "待补充",
+        "标签级Macro Recall": "待补充",
+        "标签级Macro F1": "待补充",
         "token数": "待补充",
         "PER实体数": "待补充",
         "LOC实体数": "待补充",
@@ -364,9 +364,9 @@ def parse_nlp4j_baseline() -> Dict[str, str]:
     return {
         "实验链路": "P1/nlp4j_baseline NLP4J 对照实验",
         "标签准确率": "待补充",
-        "词级Precision": "待补充",
-        "词级Recall": "待补充",
-        "词级F1": "待补充",
+        "标签级Macro Precision": "待补充",
+        "标签级Macro Recall": "待补充",
+        "标签级Macro F1": "待补充",
         "token数": str(token_count) if token_count is not None else "待补充",
         "PER实体数": str(per_count) if has_result else "待补充",
         "LOC实体数": str(loc_count) if has_result else "待补充",
@@ -391,9 +391,9 @@ def parse_bilstm_crf() -> Dict[str, str]:
         return {
             "实验链路": "P1/BiLSTMCRF 深度学习版本",
             "标签准确率": "待补充",
-            "词级Precision": "待补充",
-            "词级Recall": "待补充",
-            "词级F1": "待补充",
+            "标签级Macro Precision": "待补充",
+            "标签级Macro Recall": "待补充",
+            "标签级Macro F1": "待补充",
             "token数": "待补充",
             "PER实体数": "待补充",
             "LOC实体数": "待补充",
@@ -410,9 +410,9 @@ def parse_bilstm_crf() -> Dict[str, str]:
     return {
         "实验链路": "P1/BiLSTMCRF 深度学习版本",
         "标签准确率": fmt_metric(acc),
-        "词级Precision": fmt_metric(p),
-        "词级Recall": fmt_metric(r),
-        "词级F1": fmt_metric(f1),
+        "标签级Macro Precision": fmt_metric(p),
+        "标签级Macro Recall": fmt_metric(r),
+        "标签级Macro F1": fmt_metric(f1),
         "token数": "待补充",
         "PER实体数": "待补充",
         "LOC实体数": "待补充",
@@ -433,7 +433,8 @@ def parse_ner_samples(limit: int = 3) -> List[Dict[str, str]]:
         return []
 
     blocks = [b.strip() for b in txt.split("\n\n") if b.strip()]
-    rows: List[Dict[str, str]] = []
+    with_entities: List[Dict[str, str]] = []
+    without_entities: List[Dict[str, str]] = []
     for block in blocks:
         lines = [x.strip() for x in block.splitlines() if x.strip()]
         if len(lines) < 4:
@@ -442,14 +443,22 @@ def parse_ner_samples(limit: int = 3) -> List[Dict[str, str]]:
         person = lines[1].replace("人名:", "").strip()
         location = lines[2].replace("地名:", "").strip()
         org = lines[3].replace("机构名:", "").strip()
-        rows.append({
+        row = {
             "句子": sentence,
             "人名": person or "无",
             "地名": location or "无",
             "机构名": org or "无",
-        })
-        if len(rows) >= limit:
-            break
+        }
+        has_entity = any([person, location, org])
+        if has_entity:
+            with_entities.append(row)
+        else:
+            without_entities.append(row)
+
+    rows: List[Dict[str, str]] = []
+    rows.extend(with_entities[:limit])
+    if len(rows) < limit:
+        rows.extend(without_entities[: max(0, limit - len(rows))])
     return rows
 
 
@@ -457,9 +466,9 @@ def write_csv(rows: List[Dict[str, str]], csv_path: Path) -> None:
     fields = [
         "实验链路",
         "标签准确率",
-        "词级Precision",
-        "词级Recall",
-        "词级F1",
+        "标签级Macro Precision",
+        "标签级Macro Recall",
+        "标签级Macro F1",
         "token数",
         "PER实体数",
         "LOC实体数",
@@ -496,17 +505,22 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append("")
 
     lines.append("## 2. 统一指标总表")
-    lines.append("| 实验链路 | 标签准确率 | 词级Precision | 词级Recall | 词级F1 | token数 | PER实体数 | LOC实体数 | ORG实体数 | 交叉验证Mean | 交叉验证Std | 训练样本数 | 测试样本数 |")
+    lines.append("| 实验链路 | 标签准确率 | 标签级Macro Precision | 标签级Macro Recall | 标签级Macro F1 | token数 | PER实体数 | LOC实体数 | ORG实体数 | 交叉验证Mean | 交叉验证Std | 训练样本数 | 测试样本数 |")
     lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     for row in rows:
         lines.append(
-            f"| {row['实验链路']} | {row['标签准确率']} | {row['词级Precision']} | {row['词级Recall']} | {row['词级F1']} | {row['token数']} | {row['PER实体数']} | {row['LOC实体数']} | {row['ORG实体数']} | {row['交叉验证Mean']} | {row['交叉验证Std']} | {row['训练样本数']} | {row['测试样本数']} |"
+            f"| {row['实验链路']} | {row['标签准确率']} | {row['标签级Macro Precision']} | {row['标签级Macro Recall']} | {row['标签级Macro F1']} | {row['token数']} | {row['PER实体数']} | {row['LOC实体数']} | {row['ORG实体数']} | {row['交叉验证Mean']} | {row['交叉验证Std']} | {row['训练样本数']} | {row['测试样本数']} |"
         )
+    lines.append("")
+
+    lines.append("## 2.1 数据口径说明")
+    lines.append("- P1 主线 HMM 与 BiLSTM-CRF 的训练/测试样本数不同，当前结果用于方法趋势对照，不作为严格同测试集公平排名。")
+    lines.append("- 若需要严格公平比较，应统一 train/dev/test 划分后重新训练。")
     lines.append("")
 
     lines.append("## 3. HMM 主线结果")
     lines.append(f"- 标签准确率: {hmm_main.get('标签准确率', '待补充')}")
-    lines.append(f"- 词级 Precision/Recall/F1: {hmm_main.get('词级Precision', '待补充')} / {hmm_main.get('词级Recall', '待补充')} / {hmm_main.get('词级F1', '待补充')}")
+    lines.append(f"- 标签级 Macro Precision/Recall/F1: {hmm_main.get('标签级Macro Precision', '待补充')} / {hmm_main.get('标签级Macro Recall', '待补充')} / {hmm_main.get('标签级Macro F1', '待补充')}")
     lines.append(f"- 交叉验证 Mean/Std: {hmm_main.get('交叉验证Mean', '待补充')} / {hmm_main.get('交叉验证Std', '待补充')}")
     lines.append(f"- 指标来源: {hmm_main.get('指标来源', '待补充')}")
     lines.append(f"- 备注: {hmm_main.get('备注', '待补充')}")
@@ -514,7 +528,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
 
     lines.append("## 4. BiLSTM-CRF 结果")
     lines.append(f"- 标签准确率: {bilstm.get('标签准确率', '待补充')}")
-    lines.append(f"- 词级 Precision/Recall/F1: {bilstm.get('词级Precision', '待补充')} / {bilstm.get('词级Recall', '待补充')} / {bilstm.get('词级F1', '待补充')}")
+    lines.append(f"- 标签级 Macro Precision/Recall/F1: {bilstm.get('标签级Macro Precision', '待补充')} / {bilstm.get('标签级Macro Recall', '待补充')} / {bilstm.get('标签级Macro F1', '待补充')}")
     lines.append(f"- 训练/测试样本数: {bilstm.get('训练样本数', '待补充')} / {bilstm.get('测试样本数', '待补充')}")
     lines.append(f"- 指标来源: {bilstm.get('指标来源', '待补充')}")
     lines.append(f"- 备注: {bilstm.get('备注', '待补充')}")
@@ -524,7 +538,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append("## 5. NLP4J 对照实验")
     lines.append(f"- 当前状态: {nlp4j.get('备注', '待补充')}")
     lines.append(f"- 转换结果: {nlp4j.get('token数', '待补充')} 个 token, PER {nlp4j.get('PER实体数', '待补充')} 个, LOC {nlp4j.get('LOC实体数', '待补充')} 个, ORG {nlp4j.get('ORG实体数', '待补充')} 个")
-    lines.append(f"- Accuracy/Precision/Recall/F1: {nlp4j.get('标签准确率', '待补充')} / {nlp4j.get('词级Precision', '待补充')} / {nlp4j.get('词级Recall', '待补充')} / {nlp4j.get('词级F1', '待补充')}")
+    lines.append(f"- Accuracy/Precision/Recall/F1: {nlp4j.get('标签准确率', '待补充')} / {nlp4j.get('标签级Macro Precision', '待补充')} / {nlp4j.get('标签级Macro Recall', '待补充')} / {nlp4j.get('标签级Macro F1', '待补充')}")
     lines.append(f"- 指标来源: {nlp4j.get('指标来源', '待补充')}")
     lines.append("- 说明: 当前仅做转换与占位汇总，不把 sample_output.txt 当作真实实验指标。")
     lines.append("")
@@ -555,7 +569,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     if hmm_test2.get("has_metrics"):
         m_metrics = parse_label_report_m_metrics(hmm_test2.get("标签报告路径", ""))
         lines.append(f"- 标签准确率: {hmm_test2.get('标签准确率', '待补充')}")
-        lines.append(f"- 宏平均 F1: {hmm_test2.get('词级F1', '待补充')}")
+        lines.append(f"- 宏平均 F1: {hmm_test2.get('标签级Macro F1', '待补充')}")
         lines.append(f"- M 标签 Recall/F1: {m_metrics.get('m_recall', '待补充')} / {m_metrics.get('m_f1', '待补充')}")
         lines.append(f"- 混淆矩阵: {hmm_test2.get('混淆矩阵路径', '待补充')}")
         lines.append(f"- 标签报告: {hmm_test2.get('标签报告路径', '待补充')}")

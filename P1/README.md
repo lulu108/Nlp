@@ -63,7 +63,7 @@
 
 - test2/input 与 test2/intermediate：存在输入与中间文件。
 - test2/datasets/auto：存在 train/test/dev 与 final 文件。
-- test2/output：存在错误词与误差样例输出，支持词典迭代。
+- test2/output：已生成结构化评估输出（metrics.json、metrics_summary.txt、confusion_matrix.tsv/png、label_report.tsv）与错误词分析结果。
 
 ### 3.3 BiLSTMCRF 数据与产物
 
@@ -90,6 +90,8 @@
 3. python P1/test2/03train_hmm.py
 4. 词典回灌（可选）：python P1/test2/04update_dict.py
 5. 回灌后重复步骤 2-3 对比指标变化。
+
+说明：test2 已完成结构化评估输出，包括 metrics.json、metrics_summary.txt、confusion_matrix.tsv/png、label_report.tsv，但仅作为探索/备份版本展示。
 
 ### 4.3 深度模型链路（P1/BiLSTMCRF）
 
