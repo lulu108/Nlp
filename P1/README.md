@@ -34,7 +34,7 @@
 ### 2.2 备份/阶段版本
 
 - \_081 目录：保留了较早版本主流程，实现与主线基本同构，可用于历史对比。
-- test2 目录：包含增强迭代版流程，新增词典回灌脚本 04update_dict.py，可基于错误词反馈持续改进分词词典。
+- test2 目录：早期迭代探索版本（legacy exploration），包含词典回灌与错误分析流程，用于探索与备份，不作为最终主报告链路。
 
 结论：存在多版本并行，便于迭代，但也带来结果口径分散问题。
 
@@ -83,7 +83,7 @@
 3. 训练评估 HMM：python P1/03train_hmm.py
 4. NER 导出：python P1/04ner_hanlp.py
 
-### 4.2 迭代链路（P1/test2）
+### 4.2 迭代链路（P1/test2，可选）
 
 1. python P1/test2/01preprocess.py
 2. python P1/test2/02build_bmes_dataset.py
@@ -171,7 +171,7 @@ P1 已在现有 `P1/nlp4j_baseline/` 目录上补充规则型 NLP4J 对照实验
 
 ### 5.2 缺失或不完整能力
 
-- 已新增统一实验结果汇总表 (P1/reports/)，但 test2 结构化指标仍待补充。
+- 已新增统一实验结果汇总表 (P1/reports/)，主表聚焦主线 HMM/BiLSTM-CRF/NLP4J，对 test2 仅做附录展示。
 - 缺自动化回归评测脚本（当前依赖人工运行与观察输出）。
 - 已完成规则型 NLP4J baseline（`nlp4j-core` + 词典/规则），但训练式 NLP4J 中文 tokenizer/POS/NER 模型仍未接入。
 - 缺固定版本依赖锁定说明（例如 HanLP 词典加载行为在不同环境可能差异）。
@@ -201,7 +201,7 @@ P1 已在现有 `P1/nlp4j_baseline/` 目录上补充规则型 NLP4J 对照实验
 
 ### 5.3 仍待补充的能力
 
-- test2 结构化指标日志：当前 test2 缺少可直接解析的准确率/F1 数值日志，需要补充结构化输出。
+- test2 结果定位调整：test2 作为词典回灌与错误分析的探索版本保留，不作为最终主结果链路。
 - 训练式 NLP4J 模型适配：仍需探索并接入训练式中文 tokenizer/POS/NER 模型（如有可用模块）。
 - 自动化一键运行脚本：建议新增 P1/scripts/run_all_experiments.ps1 实现一键执行主线、test2、BiLSTMCRF 并保存日志。
 - 可复现性文档：建议新增 P1/docs/reproducibility.md 固化环境、依赖版本、随机种子与复现实验步骤。

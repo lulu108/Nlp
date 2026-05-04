@@ -298,6 +298,28 @@ def parse_hmm_test2() -> Dict[str, str]:
     }
 
 
+def parse_label_report_m_metrics(path_text: str) -> Dict[str, str]:
+    path = Path(path_text)
+    txt = read_text_auto(path)
+    if not txt:
+        return {"m_recall": "待补充", "m_f1": "待补充"}
+
+    for line in txt.splitlines():
+        cols = line.strip().split("\t")
+        if len(cols) < 5:
+            continue
+        if cols[0] != "M":
+            continue
+        try:
+            recall = float(cols[2])
+            f1 = float(cols[3])
+        except Exception:
+            return {"m_recall": "待补充", "m_f1": "待补充"}
+        return {"m_recall": fmt_metric(recall), "m_f1": fmt_metric(f1)}
+
+    return {"m_recall": "待补充", "m_f1": "待补充"}
+
+
 def parse_nlp4j_baseline() -> Dict[str, str]:
     result_path = P1_DIR / "nlp4j_baseline" / "output" / "nlp4j_result.tsv"
     txt = read_text_auto(result_path)
@@ -461,16 +483,16 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     by_chain = {row["实验链路"]: row for row in rows}
 
     hmm_main = by_chain.get("P1 主线 HMM", {})
-    hmm_test2 = by_chain.get("P1/test2 迭代版 HMM", {})
     bilstm = by_chain.get("P1/BiLSTMCRF 深度学习版本", {})
+    hmm_test2 = parse_hmm_test2()
 
     lines: List[str] = []
     lines.append("# 统一实验结果汇总")
     lines.append("")
     lines.append("## 1. 实验链路说明")
     lines.append("- P1 主线 HMM：标准预处理、BMES 构建、HMM 训练与评估链路。")
-    lines.append("- P1/test2 迭代版 HMM：面向词典回灌和误差修复的迭代链路。")
     lines.append("- P1/BiLSTMCRF 深度学习版本：BiLSTM-CRF 训练评估链路。")
+    lines.append("- P1/test2 迭代版 HMM：早期迭代探索与词典回灌备份，不作为主结果链路。")
     lines.append("")
 
     lines.append("## 2. 统一指标总表")
@@ -490,17 +512,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append(f"- 备注: {hmm_main.get('备注', '待补充')}")
     lines.append("")
 
-    lines.append("## 4. test2 迭代链路结果")
-    lines.append(f"- 标签准确率: {hmm_test2.get('标签准确率', '待补充')}")
-    lines.append(f"- 词级 Precision/Recall/F1: {hmm_test2.get('词级Precision', '待补充')} / {hmm_test2.get('词级Recall', '待补充')} / {hmm_test2.get('词级F1', '待补充')}")
-    lines.append(f"- 训练/测试样本数: {hmm_test2.get('训练样本数', '待补充')} / {hmm_test2.get('测试样本数', '待补充')}")
-    lines.append(f"- 混淆矩阵: {hmm_test2.get('混淆矩阵路径', '待补充')}")
-    lines.append(f"- 标签报告: {hmm_test2.get('标签报告路径', '待补充')}")
-    lines.append(f"- 指标来源: {hmm_test2.get('指标来源', '待补充')}")
-    lines.append(f"- 备注: {hmm_test2.get('备注', '待补充')}")
-    lines.append("")
-
-    lines.append("## 5. BiLSTM-CRF 结果")
+    lines.append("## 4. BiLSTM-CRF 结果")
     lines.append(f"- 标签准确率: {bilstm.get('标签准确率', '待补充')}")
     lines.append(f"- 词级 Precision/Recall/F1: {bilstm.get('词级Precision', '待补充')} / {bilstm.get('词级Recall', '待补充')} / {bilstm.get('词级F1', '待补充')}")
     lines.append(f"- 训练/测试样本数: {bilstm.get('训练样本数', '待补充')} / {bilstm.get('测试样本数', '待补充')}")
@@ -509,7 +521,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append("")
 
     nlp4j = by_chain.get("P1/nlp4j_baseline NLP4J 对照实验", {})
-    lines.append("## 6. NLP4J 对照实验")
+    lines.append("## 5. NLP4J 对照实验")
     lines.append(f"- 当前状态: {nlp4j.get('备注', '待补充')}")
     lines.append(f"- 转换结果: {nlp4j.get('token数', '待补充')} 个 token, PER {nlp4j.get('PER实体数', '待补充')} 个, LOC {nlp4j.get('LOC实体数', '待补充')} 个, ORG {nlp4j.get('ORG实体数', '待补充')} 个")
     lines.append(f"- Accuracy/Precision/Recall/F1: {nlp4j.get('标签准确率', '待补充')} / {nlp4j.get('词级Precision', '待补充')} / {nlp4j.get('词级Recall', '待补充')} / {nlp4j.get('词级F1', '待补充')}")
@@ -517,7 +529,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append("- 说明: 当前仅做转换与占位汇总，不把 sample_output.txt 当作真实实验指标。")
     lines.append("")
 
-    lines.append("## 7. NER 结果样例")
+    lines.append("## 6. NER 结果样例")
     if not ner_samples:
         lines.append("- 待补充（未解析到 P1/output/ner_hanlp.txt 样例）。")
     else:
@@ -529,18 +541,27 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
             lines.append(f"- 机构名: {item['机构名']}")
             lines.append("")
 
-    lines.append("## 8. 当前不足")
-    if hmm_test2.get("has_metrics"):
-        lines.append("- test2 已生成结构化评测输出（metrics.json/混淆矩阵/标签报告）。")
-    else:
-        lines.append("- test2 当前缺少结构化评测日志，准确率与 F1 暂无法自动汇总。")
+    lines.append("## 7. 当前不足")
     lines.append("- BiLSTM-CRF 当前主要从混淆矩阵反推指标，缺少统一文本日志沉淀。")
     lines.append("- 三条链路的指标命名和落盘格式仍未完全统一。")
     lines.append("")
 
-    lines.append("## 9. 下一步需要补 NLP4J")
+    lines.append("## 8. 下一步需要补 NLP4J")
     lines.append("- 若后续接入真实 NLP4J 运行环境，可将 Accuracy/F1 纳入同一份 metrics_summary.csv。")
     lines.append("- 也可补充标准答案文件，将转换结果与真实指标一起评估。")
+    lines.append("")
+
+    lines.append("## 9. 附录：test2 迭代探索结果")
+    if hmm_test2.get("has_metrics"):
+        m_metrics = parse_label_report_m_metrics(hmm_test2.get("标签报告路径", ""))
+        lines.append(f"- 标签准确率: {hmm_test2.get('标签准确率', '待补充')}")
+        lines.append(f"- 宏平均 F1: {hmm_test2.get('词级F1', '待补充')}")
+        lines.append(f"- M 标签 Recall/F1: {m_metrics.get('m_recall', '待补充')} / {m_metrics.get('m_f1', '待补充')}")
+        lines.append(f"- 混淆矩阵: {hmm_test2.get('混淆矩阵路径', '待补充')}")
+        lines.append(f"- 标签报告: {hmm_test2.get('标签报告路径', '待补充')}")
+        lines.append("- 结论: test2 作为词典回灌与错误分析探索版本保留，不作为最终主模型结果。")
+    else:
+        lines.append("- 当前未生成结构化评估输出，暂无法汇总 test2 指标。")
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -550,7 +571,6 @@ def main() -> None:
 
     rows = [
         parse_hmm_main(),
-        parse_hmm_test2(),
         parse_bilstm_crf(),
         parse_nlp4j_baseline(),
     ]
