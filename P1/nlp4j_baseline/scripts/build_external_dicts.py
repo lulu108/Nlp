@@ -74,13 +74,29 @@ def load_jieba_common() -> Set[str]:
     return words
 
 
-def find_thuocl_files() -> Tuple[List[Path], List[Path]]:
+def find_thuocl_files() -> Tuple[List[Path], List[Path], List[Path]]:
     if not THUOCL_DIR.exists():
-        return [], []
+        return [], [], []
     files = [p for p in THUOCL_DIR.iterdir() if p.is_file()]
-    loc_files = [p for p in files if any(key in p.name.lower() for key in ["loc", "place", "location"]) or "地名" in p.name]
-    person_files = [p for p in files if any(key in p.name.lower() for key in ["person", "name"]) or "人名" in p.name]
-    return loc_files, person_files
+    loc_files: List[Path] = []
+    person_files: List[Path] = []
+    common_files: List[Path] = []
+
+    for path in files:
+        name = path.name.lower()
+        is_loc = any(key in name for key in ["diming", "loc", "place", "location"]) or "地名" in path.name
+        is_person = any(key in name for key in ["lishimingren", "renming", "person", "name"]) or "人名" in path.name
+        is_common = any(key in name for key in ["it", "caijing", "chengyu"])
+
+        if is_loc:
+            loc_files.append(path)
+        elif is_person:
+            person_files.append(path)
+        else:
+            if is_common or path.suffix.lower() == ".txt":
+                common_files.append(path)
+
+    return common_files, loc_files, person_files
 
 
 def load_thuocl_terms(paths: List[Path]) -> Set[str]:
@@ -197,6 +213,17 @@ def merge_words(*groups: Iterable[str]) -> Set[str]:
     return merged
 
 
+def extract_org_from_common(common_words: Iterable[str]) -> Set[str]:
+    suffixes = ["大学", "学院", "公司", "集团", "研究院", "委员会", "实验室", "银行", "中心", "出版社"]
+    orgs: Set[str] = set()
+    for word in common_words:
+        for suffix in suffixes:
+            if word.endswith(suffix) and len(word) >= len(suffix) + 1:
+                orgs.add(word)
+                break
+    return orgs
+
+
 def write_sorted(path: Path, words: Iterable[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     sorted_words = sorted(set(words), key=lambda w: (-len(w), w))
@@ -211,7 +238,8 @@ def main() -> None:
 
     common_words.update(load_jieba_common())
 
-    loc_files, person_files = find_thuocl_files()
+    common_files, loc_files, person_files = find_thuocl_files()
+    common_words.update(load_thuocl_terms(common_files))
     location_words.update(load_thuocl_terms(loc_files))
     person_words.update(load_thuocl_terms(person_files))
 
@@ -242,6 +270,7 @@ def main() -> None:
     organization_words = merge_words(organization_words, normalize_lines(existing_org))
 
     common_words = {w for w in common_words if len(w) >= 2}
+    organization_words.update(extract_org_from_common(common_words))
 
     write_sorted(OUT_COMMON, common_words)
     write_sorted(OUT_PERSON, person_words)

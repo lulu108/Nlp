@@ -26,7 +26,7 @@
 
 ## 3. Maven 与依赖说明
 
-当前 `pom.xml` 没有强行写入未经确认的 NLP4J Maven 坐标，因此现在可以稳定完成工程编译，但还没有真实接入 NLP4J API。
+当前 `pom.xml` 已接入 `org.nlp4j:nlp4j-core:1.3.7.19`，可以稳定完成工程编译，但还没有真实接入训练式 NLP4J API。
 
 如果后续你已经确认了可用的 NLP4J jar 或 Maven 坐标，可以按下面两种方式接入：
 
@@ -108,7 +108,7 @@ P1/nlp4j_baseline/sample_output.txt
 - 词典路径：`P1/nlp4j_baseline/dict/`
 - 词典来源建议：P1 自动抽词 + jieba 默认词典 + THUOCL
 - 规则：最长匹配切分 + 词典实体映射 + 简单 POS 规则
-- 说明：这不是训练好的 NLP4J NER 模型，结果不与 HMM/BiLSTM-CRF 同口径 Accuracy/F1 比较
+- 说明：这不是训练好的 NLP4J tokenizer/POS/NER 模型，结果不与 HMM/BiLSTM-CRF 同口径 Accuracy/F1 比较
 
 输出文件：
 
@@ -123,7 +123,7 @@ sentence_id    token    pos    entity
 外部词典放置说明：
 
 - `P1/nlp4j_baseline/dict/external/jieba_dict.txt`
-- `P1/nlp4j_baseline/dict/external/thuocl/`
+- `P1/nlp4j_baseline/dict/external/thuocl/`（将 THUOCL 文件放在此目录）
 - `P1/output/ner_hanlp.txt`
 - `P1/datasets/auto/train.txt`、`dev.txt`、`test.txt`
 
