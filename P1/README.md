@@ -14,11 +14,9 @@
 
 ### 1.2 当前完成度（估计）
 
-- 已完成约 80%（基础链路完整，含 HMM 与 BiLSTM-CRF 两条训练线）。
-- 主要缺口：
-  - 缺统一实验报告模板与可复现实验对照表。
-  - NLP4J 对照实验已补到 `P1/nlp4j_baseline/`，当前已实现基于 `org.nlp4j:nlp4j-core` 的规则型中文序列标注 baseline，但训练式 NLP4J 中文模型未接入。
-  - 缺自动化测试与一键评估汇总脚本。
+- 主体链路已完成（主线 HMM、BiLSTM-CRF、HanLP NER 与统一汇总流程可用）。
+- 主要剩余：可复现性文档、依赖锁定说明与自动化一键运行脚本。
+- NLP4J 对照实验已补到 `P1/nlp4j_baseline/`，当前为基于 `org.nlp4j:nlp4j-core` 的规则型中文序列标注 baseline，训练式 NLP4J 中文模型未接入。
 
 ## 2. 目录与脚本检查结论
 
@@ -180,8 +178,6 @@ P1 已在现有 `P1/nlp4j_baseline/` 目录上补充规则型 NLP4J 对照实验
 
 ### 5.3 后续建议新增/修改文件（规划项）
 
-- 建议新增：P1/nlp4j_baseline/
-  - 放置 NLP4J 版本实现及运行说明。
 - 建议新增：P1/docs/reproducibility.md
 
 ## 6. 实验要求对应关系
@@ -195,18 +191,16 @@ P1 已在现有 `P1/nlp4j_baseline/` 目录上补充规则型 NLP4J 对照实验
 
 ## 7. 结论
 
-### 5.2 已完成的基础设施
+### 7.1 已完成的基础设施
 
 - ✅ P1/reports/experiment_summary.md：汇总三条链路的核心指标与样例分析。
 - ✅ P1/scripts/collect_metrics.py：统一解析输出并生成对照表（现已纳入 NLP4J 占位行）。
 - ✅ P1/nlp4j_baseline/：已实现基于 `nlp4j-core` 的规则型中文序列标注 baseline，并补充外部词典构建脚本与运行说明。
 
-### 5.3 仍待补充的能力
+### 7.2 仍待补充的能力
 
 - test2 结果定位调整：test2 作为词典回灌与错误分析的探索版本保留，不作为最终主结果链路。
 - 训练式 NLP4J 模型适配：仍需探索并接入训练式中文 tokenizer/POS/NER 模型（如有可用模块）。
 - 自动化一键运行脚本：建议新增 P1/scripts/run_all_experiments.ps1 实现一键执行主线、test2、BiLSTMCRF 并保存日志。
 - 可复现性文档：建议新增 P1/docs/reproducibility.md 固化环境、依赖版本、随机种子与复现实验步骤。
 - 固定版本依赖锁定说明：HanLP 词典加载行为在不同环境可能差异，需要明确说明。
-
-## 7. 结论

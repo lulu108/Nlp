@@ -547,6 +547,12 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     if not ner_samples:
         lines.append("- 待补充（未解析到 P1/output/ner_hanlp.txt 样例）。")
     else:
+        has_entity_sample = any(
+            (item.get("人名") != "无" or item.get("地名") != "无" or item.get("机构名") != "无")
+            for item in ner_samples
+        )
+        if not has_entity_sample:
+            lines.append("- 当前测试集前若干样例未识别出实体。")
         for i, item in enumerate(ner_samples, start=1):
             lines.append(f"### 样例 {i}")
             lines.append(f"- {item['句子']}")
