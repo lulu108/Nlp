@@ -443,6 +443,12 @@ def parse_ner_samples(limit: int = 3) -> List[Dict[str, str]]:
         person = lines[1].replace("人名:", "").strip()
         location = lines[2].replace("地名:", "").strip()
         org = lines[3].replace("机构名:", "").strip()
+        if person == "无":
+            person = ""
+        if location == "无":
+            location = ""
+        if org == "无":
+            org = ""
         row = {
             "句子": sentence,
             "人名": person or "无",
