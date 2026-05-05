@@ -2,10 +2,10 @@
 
 ## 1. 当前定位
 
-`P1/nlp4j_baseline` 当前是一个 **Java 17 + Maven** 的命令行实验目录，不是 Spring Boot 项目。
+`P1/nlp4j_baseline` 当前是一个 **Java 21 + Maven** 的命令行实验目录，不是 Spring Boot 项目。
 
-- JDK 版本要求：`17`
-- Maven 编译参数：`maven.compiler.release=17`
+- JDK 版本要求：`21`
+- Maven 编译参数：`maven.compiler.release=21`
 - 运行方式：命令行
 - 当前用途：为 P1 中的 NLP4J 对照实验预留输入、输出、转换脚本和 Java 接入骨架
 
@@ -37,7 +37,7 @@
 
 ## 4. 运行方式
 
-在项目根目录下执行：
+在项目根目录下执行（词典规则型 baseline）：
 
 ```bash
 cd P1/nlp4j_baseline
@@ -133,14 +133,37 @@ sentence_id    token    pos    entity
 python P1/nlp4j_baseline/scripts/build_external_dicts.py
 ```
 
-## 8. 当前状态结论
+## 8. 训练式 Java HMM baseline（BMES）
+
+新增的训练式 baseline 是纯 Java HMM（BMES）实现，用于与主线 HMM/BiLSTM-CRF 做对照，**不是官方 NLP4J 训练模型**。
+
+运行方式：
+
+```bash
+cd P1/nlp4j_baseline
+mvn compile
+mvn exec:java -Dexec.mainClass=Nlp4jHmmTrainer -Dexec.args="../datasets/auto/train.txt model/hmm_bmes_model.json"
+mvn exec:java -Dexec.mainClass=Nlp4jHmmPredictor -Dexec.args="../datasets/auto/test.txt model/hmm_bmes_model.json output"
+```
+
+输出文件：
+
+- `P1/nlp4j_baseline/model/hmm_bmes_model.json`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_metrics.json`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_confusion_matrix.tsv`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_label_report.tsv`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_char_result.tsv`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_token_result.tsv`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_samples.txt`
+
+## 9. 当前状态结论
 
 - 第一版 `sample_input.txt`、`sample_output.txt`、转换脚本、汇总占位已经存在。
 - 现在已补齐 Java/Maven 命令行工程骨架。
 - 当前还没有真实调用 NLP4J。
 - 下一步需要补充真实 NLP4J jar 或已确认可用的 Maven 坐标，并在 `Nlp4jSequenceLabelingDemo.java` 中完成 API 适配。
 
-## 9. NLP4J 依赖接入尝试
+## 10. NLP4J 依赖接入尝试
 
 - 原先尝试 `edu.emory.mathcs.nlp:nlp4j-api:1.1.2`，但当前 Maven 仓库无法解析该依赖。
 - 当前改为尝试 `org.nlp4j:nlp4j-core:1.3.7.19`。
@@ -150,7 +173,7 @@ python P1/nlp4j_baseline/scripts/build_external_dicts.py
 - 是否支持中文：未确认（需查官方文档与示例）
 - Accuracy/F1：待补充
 
-## 10. nlp4j-stanford 可行性探索
+## 11. nlp4j-stanford 可行性探索
 
 目标：评估 `org.nlp4j:nlp4j-stanford:1.3.5.0` 是否能作为中文 token/POS/NER 扩展方案。
 

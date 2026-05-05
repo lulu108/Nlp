@@ -380,6 +380,73 @@ def parse_nlp4j_baseline() -> Dict[str, str]:
     }
 
 
+def parse_nlp4j_hmm() -> Dict[str, str]:
+    metrics_path = P1_DIR / "nlp4j_baseline" / "output" / "nlp4j_hmm_metrics.json"
+    if not metrics_path.exists():
+        return {
+            "实验链路": "P1/nlp4j_baseline Java HMM 训练式基线",
+            "标签准确率": "待补充",
+            "标签级Macro Precision": "待补充",
+            "标签级Macro Recall": "待补充",
+            "标签级Macro F1": "待补充",
+            "token数": "待补充",
+            "PER实体数": "待补充",
+            "LOC实体数": "待补充",
+            "ORG实体数": "待补充",
+            "交叉验证Mean": "待补充",
+            "交叉验证Std": "待补充",
+            "训练样本数": "待补充",
+            "测试样本数": "待补充",
+            "指标来源": "P1/nlp4j_baseline/output/nlp4j_hmm_metrics.json",
+            "备注": "尚未生成训练式 Java HMM 指标",
+        }
+
+    raw = read_text_auto(metrics_path)
+    if not raw:
+        return {
+            "实验链路": "P1/nlp4j_baseline Java HMM 训练式基线",
+            "标签准确率": "待补充",
+            "标签级Macro Precision": "待补充",
+            "标签级Macro Recall": "待补充",
+            "标签级Macro F1": "待补充",
+            "token数": "待补充",
+            "PER实体数": "待补充",
+            "LOC实体数": "待补充",
+            "ORG实体数": "待补充",
+            "交叉验证Mean": "待补充",
+            "交叉验证Std": "待补充",
+            "训练样本数": "待补充",
+            "测试样本数": "待补充",
+            "指标来源": "P1/nlp4j_baseline/output/nlp4j_hmm_metrics.json",
+            "备注": "训练式 Java HMM metrics.json 为空或无法解析",
+        }
+
+    try:
+        data = json.loads(raw)
+    except Exception:
+        data = {}
+
+    train_size = data.get("train_size")
+    test_size = data.get("test_size")
+    return {
+        "实验链路": "P1/nlp4j_baseline Java HMM 训练式基线",
+        "标签准确率": fmt_metric(data.get("tag_accuracy")),
+        "标签级Macro Precision": fmt_metric(data.get("macro_precision")),
+        "标签级Macro Recall": fmt_metric(data.get("macro_recall")),
+        "标签级Macro F1": fmt_metric(data.get("macro_f1")),
+        "token数": "待补充",
+        "PER实体数": "待补充",
+        "LOC实体数": "待补充",
+        "ORG实体数": "待补充",
+        "交叉验证Mean": "待补充",
+        "交叉验证Std": "待补充",
+        "训练样本数": str(train_size) if train_size is not None else "待补充",
+        "测试样本数": str(test_size) if test_size is not None else "待补充",
+        "指标来源": "P1/nlp4j_baseline/output/nlp4j_hmm_metrics.json",
+        "备注": "训练式 Java HMM BMES baseline，非官方 NLP4J 训练模型",
+    }
+
+
 def parse_bilstm_crf() -> Dict[str, str]:
     confusion_path = P1_DIR / "BiLSTMCRF" / "output" / "confusion_matrix.tsv"
     confusion = parse_confusion_tsv(confusion_path)
@@ -541,12 +608,16 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append("")
 
     nlp4j = by_chain.get("P1/nlp4j_baseline NLP4J 对照实验", {})
+    nlp4j_hmm = by_chain.get("P1/nlp4j_baseline Java HMM 训练式基线", {})
     lines.append("## 5. NLP4J 对照实验")
     lines.append(f"- 当前状态: {nlp4j.get('备注', '待补充')}")
     lines.append(f"- 转换结果: {nlp4j.get('token数', '待补充')} 个 token, PER {nlp4j.get('PER实体数', '待补充')} 个, LOC {nlp4j.get('LOC实体数', '待补充')} 个, ORG {nlp4j.get('ORG实体数', '待补充')} 个")
     lines.append(f"- Accuracy/Precision/Recall/F1: {nlp4j.get('标签准确率', '待补充')} / {nlp4j.get('标签级Macro Precision', '待补充')} / {nlp4j.get('标签级Macro Recall', '待补充')} / {nlp4j.get('标签级Macro F1', '待补充')}")
     lines.append(f"- 指标来源: {nlp4j.get('指标来源', '待补充')}")
     lines.append("- 说明: 当前仅做转换与占位汇总，不把 sample_output.txt 当作真实实验指标。")
+    if nlp4j_hmm:
+        lines.append(f"- 训练式 HMM: {nlp4j_hmm.get('标签准确率', '待补充')} / {nlp4j_hmm.get('标签级Macro Precision', '待补充')} / {nlp4j_hmm.get('标签级Macro Recall', '待补充')} / {nlp4j_hmm.get('标签级Macro F1', '待补充')}")
+        lines.append(f"- 训练式 HMM 指标来源: {nlp4j_hmm.get('指标来源', '待补充')}")
     lines.append("")
 
     lines.append("## 6. NER 结果样例")
@@ -599,6 +670,7 @@ def main() -> None:
         parse_hmm_main(),
         parse_bilstm_crf(),
         parse_nlp4j_baseline(),
+        parse_nlp4j_hmm(),
     ]
     ner_samples = parse_ner_samples(limit=3)
 
