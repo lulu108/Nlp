@@ -11,10 +11,27 @@ import java.util.Map;
 
 public class Nlp4jHmmPredictor {
 
+    private static final double DEFAULT_ILLEGAL_TRANSITION_PENALTY = -0.3;
+    private static final double DEFAULT_START_PENALTY = -0.4;
+    private static final double DEFAULT_END_PENALTY = -0.4;
+
+    private static double illegalTransitionPenalty = DEFAULT_ILLEGAL_TRANSITION_PENALTY;
+    private static double startPenalty = DEFAULT_START_PENALTY;
+    private static double endPenalty = DEFAULT_END_PENALTY;
+
     public static void main(String[] args) throws Exception {
         String testPath = args.length > 0 ? args[0] : "../datasets/auto/test.txt";
         String modelPath = args.length > 1 ? args[1] : "model/hmm_bmes_model.json";
         String outputDir = args.length > 2 ? args[2] : "output";
+        if (args.length > 3) {
+            illegalTransitionPenalty = Double.parseDouble(args[3]);
+        }
+        if (args.length > 4) {
+            startPenalty = Double.parseDouble(args[4]);
+        }
+        if (args.length > 5) {
+            endPenalty = Double.parseDouble(args[5]);
+        }
 
         HmmModel model = loadModel(Paths.get(modelPath));
         List<BmesUtils.Sample> samples = BmesUtils.readDataset(Paths.get(testPath));
@@ -82,7 +99,7 @@ public class Nlp4jHmmPredictor {
         for (int i = 0; i < s; i++) {
             String state = BmesUtils.STATES.get(i);
             double emit = emission(model, state, observations.get(0));
-            dp[0][i] = model.pi.get(state) + emit;
+            dp[0][i] = model.pi.get(state) + emit + startPenalty(state);
             back[0][i] = -1;
         }
 
@@ -95,7 +112,7 @@ public class Nlp4jHmmPredictor {
                 for (int j = 0; j < s; j++) {
                     String prevState = BmesUtils.STATES.get(j);
                     double trans = model.trans.get(prevState).get(currState);
-                    double score = dp[t - 1][j] + trans;
+                    double score = dp[t - 1][j] + trans + transitionPenalty(prevState, currState);
                     if (score > bestScore) {
                         bestScore = score;
                         bestPrev = j;
@@ -109,8 +126,9 @@ public class Nlp4jHmmPredictor {
         int bestLast = 0;
         double bestScore = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < s; i++) {
-            if (dp[n - 1][i] > bestScore) {
-                bestScore = dp[n - 1][i];
+            double score = dp[n - 1][i] + endPenalty(BmesUtils.STATES.get(i));
+            if (score > bestScore) {
+                bestScore = score;
                 bestLast = i;
             }
         }
@@ -125,6 +143,31 @@ public class Nlp4jHmmPredictor {
             }
         }
         return path;
+    }
+
+    private static double startPenalty(String state) {
+        if ("B".equals(state) || "S".equals(state)) {
+            return 0.0;
+        }
+        return startPenalty;
+    }
+
+    private static double endPenalty(String state) {
+        if ("E".equals(state) || "S".equals(state)) {
+            return 0.0;
+        }
+        return endPenalty;
+    }
+
+    private static double transitionPenalty(String prev, String curr) {
+        boolean legal = switch (prev) {
+            case "B" -> "M".equals(curr) || "E".equals(curr);
+            case "M" -> "M".equals(curr) || "E".equals(curr);
+            case "E" -> "B".equals(curr) || "S".equals(curr);
+            case "S" -> "B".equals(curr) || "S".equals(curr);
+            default -> true;
+        };
+        return legal ? 0.0 : illegalTransitionPenalty;
     }
 
     private static double emission(HmmModel model, String state, String obs) {
@@ -184,6 +227,9 @@ public class Nlp4jHmmPredictor {
             writer.write("\"train_size\":" + model.trainSize + ",");
             writer.write("\"test_size\":" + testSize + ",");
             writer.write("\"model_path\":\"" + escapeJson(modelPath) + "\",");
+            writer.write("\"illegal_transition_penalty\":" + String.format("%.6f", illegalTransitionPenalty) + ",");
+            writer.write("\"start_penalty\":" + String.format("%.6f", startPenalty) + ",");
+            writer.write("\"end_penalty\":" + String.format("%.6f", endPenalty) + ",");
             writer.write("\"confusion_matrix_path\":\"" + escapeJson(confusionPath.toString()) + "\",");
             writer.write("\"label_report_path\":\"" + escapeJson(reportPath.toString()) + "\",");
             writer.write("\"samples_path\":\"" + escapeJson(samplePath.toString()) + "\"");

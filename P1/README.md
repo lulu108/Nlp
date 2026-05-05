@@ -157,6 +157,20 @@ P1 已在现有 `P1/nlp4j_baseline/` 目录上补充规则型 NLP4J 对照实验
 
 统一汇总脚本 `python P1/scripts/collect_metrics.py` 会统计 NLP4J token 数与 PER/LOC/ORG 数，但 Accuracy / Precision / Recall / F1 仍应视为“待补充”。
 
+补充：训练式 Java HMM baseline（BMES）运行方式：
+
+1. `cd P1/nlp4j_baseline`
+2. `mvn compile`
+3. 训练：`mvn exec:java -Dexec.mainClass=Nlp4jHmmTrainer -Dexec.args="../datasets/auto/train.txt model/hmm_bmes_model.json"`
+4. 评估：`mvn exec:java -Dexec.mainClass=Nlp4jHmmPredictor -Dexec.args="../datasets/auto/test.txt model/hmm_bmes_model.json output"`
+
+产物会写到：
+
+- `P1/nlp4j_baseline/model/hmm_bmes_model.json`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_metrics.json`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_confusion_matrix.tsv`
+- `P1/nlp4j_baseline/output/nlp4j_hmm_label_report.tsv`
+
 ## 5. TODO 清单（只整理，不改代码）
 
 ### 5.1 已完成能力

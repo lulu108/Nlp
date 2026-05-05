@@ -1,0 +1,48 @@
+Sentence: 毋庸讳言，涉企谣言如同寄生在市场肌体上的“毒瘤”，不仅误导消费者，更损害企业商誉，让企业蒙受不白之冤，可谓不胜其烦、不堪其苦。
+Gold BMES: B M M E S B E B E B E B E S B E B E S S S B E S S B E B E B M E S S B E B E B E S S B E B E B M M E S B E B M M E S B E S S S
+Pred BMES: B E B E S B E B E B E B E S B E S B E S S B E S S B E B E B M E S S B E B E B E S S B E B E B E B E S B E B E B E S B E B E S
+Gold tokens: 毋庸讳言/，/涉企/谣言/如同/寄生/在/市场/肌体/上/的/“/毒瘤/”/，/不仅/误导/消费者/，/更/损害/企业/商誉/，/让/企业/蒙受/不白之冤/，/可谓/不胜其烦/、/不堪/其/苦/。
+Pred tokens: 毋庸/讳言/，/涉企/谣言/如同/寄生/在/市场/肌/体上/的/“/毒瘤/”/，/不仅/误导/消费者/，/更/损害/企业/商誉/，/让/企业/蒙受/不白/之冤/，/可谓/不胜/其烦/、/不堪/其苦/。
+
+Sentence: AI红包大战之热，令人不禁想起11年前那个改写移动支付格局的除夕之夜。
+Gold BMES: B E B E S S S S S B E B E B E B E B E B E B E B E B E B E S B M M E S
+Pred BMES: B E B E B E B E S B E B E B E B E S B E S B E B E B E B E S B E B E S
+Gold tokens: AI/红包/大/战/之/热/，/令人/不禁/想起/11/年前/那个/改写/移动/支付/格局/的/除夕之夜/。
+Pred tokens: AI/红包/大战/之热/，/令人/不禁/想起/11/年/前那/个/改写/移动/支付/格局/的/除夕/之夜/。
+
+Sentence: 他表示，目前我国的超大规模市场优势还没有充分发挥出来，扩大消费特别是服务消费潜力巨大，城市更新、传统基础设施改造升级、新型基础设施建设等领域都有巨大的投资空间。
+Gold BMES: S B E S B E B E S B M M E B E B E S B E B M M E B E S B E B E B E S B E B E B E B E S B M M E S B E B M M E B E B E S B E B E B E B E S B E S S B E S B E B E S
+Pred BMES: S B E S B E B E S B E B E B E B E S B E B E B E B E S B E B E B E S B E B E B E B E S B E B E S B E B E B E B E B E S B E B E B E B E S B E S S B E S B E B E S
+Gold tokens: 他/表示/，/目前/我国/的/超大规模/市场/优势/还/没有/充分发挥/出来/，/扩大/消费/特别/是/服务/消费/潜力/巨大/，/城市更新/、/传统/基础设施/改造/升级/、/新型/基础/设施/建设/等/领域/都/有/巨大/的/投资/空间/。
+Pred tokens: 他/表示/，/目前/我国/的/超大/规模/市场/优势/还/没有/充分/发挥/出来/，/扩大/消费/特别/是/服务/消费/潜力/巨大/，/城市/更新/、/传统/基础/设施/改造/升级/、/新型/基础/设施/建设/等/领域/都/有/巨大/的/投资/空间/。
+
+Sentence: 人民网留言板，成为连接党委政府与各族群众的“连心桥”。
+Gold BMES: B M E B E S S B E B E B M M E S B M M E S S B M E S S
+Pred BMES: B E B E B E S B E B E B E B E S B E B E S S B E S S S
+Gold tokens: 人民网/留言/板/，/成为/连接/党委政府/与/各族群众/的/“/连心桥/”/。
+Pred tokens: 人民/网留/言板/，/成为/连接/党委/政府/与/各族/群众/的/“/连心/桥/”/。
+
+Sentence: 国家金融监督管理总局、中国人民银行、证监会联合发布公告，批准渣打银行、汇丰银行、花旗银行在上海自贸试验区设立全资证券公司。
+Gold BMES: B E B E B E B E B E S B M M M M E S B M E B E B M M E S B E B M M E S B M M E S B M M E S B E S S B M E B E B E B M M E S
+Pred BMES: B E B E B E B E B E S B E B M M E S S B E B E B E B E S B E S B M E S B M M E S B M M E S B E S B M M E B E B E B E B E S
+Gold tokens: 国家/金融/监督/管理/总局/、/中国人民银行/、/证监会/联合/发布公告/，/批准/渣打银行/、/汇丰银行/、/花旗银行/在/上海/自/贸/试验区/设立/全资/证券公司/。
+Pred tokens: 国家/金融/监督/管理/总局/、/中国/人民银行/、/证/监会/联合/发布/公告/，/批准/渣/打银行/、/汇丰银行/、/花旗银行/在/上海/自/贸试验区/设立/全资/证券/公司/。
+
+Sentence: 提前12小时预报到县、提前6小时和2小时预报到乡镇村，让基层干部能第一时间组织群众转移。
+Gold BMES: B E B E B E B E S S S B E S B E S S B E B E S B M E S S B M M E S B M M E B E B E B E S
+Pred BMES: B E B E B E B E B E S B E S B E S B E S B E S B M E S S B E S B E S S B E B E B E B E S
+Gold tokens: 提前/12/小时/预报/到/县/、/提前/6/小时/和/2/小时/预报/到/乡镇村/，/让/基层干部/能/第一时间/组织/群众/转移/。
+Pred tokens: 提前/12/小时/预报/到县/、/提前/6/小时/和/2小/时/预报/到/乡镇村/，/让/基层/干/部能/第/一/时间/组织/群众/转移/。
+
+Sentence: 台北市长蒋万安15日受访时表示，赖清德不应该美化殖民主义，一再撕裂台湾社会，制造更深的仇恨与对立。
+Gold BMES: B M E S S B E B E S B E S B E S B M E S B E B E B M M E S B E B E B E B E S B E B E S B E S B E S
+Pred BMES: B E B E B M E B E S B E S B E S B M E B E S B E B E B E S B E B E B E B E S B E B E S B E S B E S
+Gold tokens: 台北市/长/蒋/万安/15/日/受访/时/表示/，/赖清德/不/应该/美化/殖民主义/，/一再/撕裂/台湾/社会/，/制造/更深/的/仇恨/与/对立/。
+Pred tokens: 台北/市长/蒋万安/15/日/受访/时/表示/，/赖清德/不应/该/美化/殖民/主义/，/一再/撕裂/台湾/社会/，/制造/更深/的/仇恨/与/对立/。
+
+Sentence: 此举意义深远，既是优化营商环境的有力抓手，也是维护公平竞争的重要举措，为市场主体安心经营筑牢了坚实的网络防线。
+Gold BMES: B E B E B E S B E B E B E B E S B E B E S S S B E B M M E S B E B E S S B M M E B E B E S S S B E S B E B E S
+Pred BMES: S B E S B E S S S B E B E B E S B E B E S S S B E B E B E S B E B E S S B E B E B E B E S S S B E S B E B E S
+Gold tokens: 此举/意义/深远/，/既是/优化/营商/环境/的/有力/抓手/，/也/是/维护/公平竞争/的/重要/举措/，/为/市场主体/安心/经营/筑/牢/了/坚实/的/网络/防线/。
+Pred tokens: 此/举意/义/深远/，/既/是/优化/营商/环境/的/有力/抓手/，/也/是/维护/公平/竞争/的/重要/举措/，/为/市场/主体/安心/经营/筑/牢/了/坚实/的/网络/防线/。
+
