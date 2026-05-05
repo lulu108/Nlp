@@ -22,7 +22,12 @@ $badCount = 0
 
 foreach ($d in $dirs) {
     $tag = $d.Name
-    if ($tag -notmatch '^itp(?<itp>m?\d+p\d+)_sp(?<sp>m?\d+p\d+)_ep(?<ep>m?\d+p\d+)$') {
+    $isNewTag = $tag -match '^itp(?<itp>m?\d+p\d+)_sp(?<sp>m?\d+p\d+)_ep(?<ep>m?\d+p\d+)$'
+    $isOldTag = $false
+    if (-not $isNewTag) {
+        $isOldTag = $tag -match '^itp(?<itp>-?\d+(?:\.\d+)?)_sp(?<sp>-?\d+(?:\.\d+)?)_ep(?<ep>-?\d+(?:\.\d+)?)$'
+    }
+    if (-not ($isNewTag -or $isOldTag)) {
         $results.Add([PSCustomObject]@{
             tag = $tag
             status = 'BAD_TAG_FORMAT'
@@ -38,14 +43,17 @@ foreach ($d in $dirs) {
         continue
     }
 
-    function Decode-TagNum([string]$s) {
-        $x = $s.Replace('m','-').Replace('p','.')
-        return [double]$x
+    function Decode-TagNum([string]$s, [bool]$newFormat) {
+        if ($newFormat) {
+            $x = $s.Replace('m','-').Replace('p','.')
+            return [double]$x
+        }
+        return [double]$s
     }
 
-    $expectedItp = Decode-TagNum $Matches['itp']
-    $expectedSp  = Decode-TagNum $Matches['sp']
-    $expectedEp  = Decode-TagNum $Matches['ep']
+    $expectedItp = Decode-TagNum $Matches['itp'] $isNewTag
+    $expectedSp  = Decode-TagNum $Matches['sp']  $isNewTag
+    $expectedEp  = Decode-TagNum $Matches['ep']  $isNewTag
 
     $metricsPath = Join-Path $d.FullName 'nlp4j_hmm_metrics.json'
     if (-not (Test-Path -LiteralPath $metricsPath -PathType Leaf)) {
