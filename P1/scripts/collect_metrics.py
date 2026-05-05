@@ -552,7 +552,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
             for item in ner_samples
         )
         if not has_entity_sample:
-            lines.append("- 当前测试集前若干样例未识别出实体。")
+            lines.append("- 当前测试样例未识别出明显 PER/LOC/ORG。")
         for i, item in enumerate(ner_samples, start=1):
             lines.append(f"### 样例 {i}")
             lines.append(f"- {item['句子']}")
