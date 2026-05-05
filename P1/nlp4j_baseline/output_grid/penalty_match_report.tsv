@@ -8,4 +8,3 @@
 "itp-1_sp-0.2_ep-0.2"	"OK"	"-1"	"-0.2"	"-0.2"	"-1"	"-0.2"	"-0.2"	"D:\Project\project_nlp\Nlp\P1\nlp4j_baseline\output_grid\itp-1_sp-0.2_ep-0.2\nlp4j_hmm_metrics.json"
 "itp-1_sp-0.6_ep-0.6"	"OK"	"-1"	"-0.6"	"-0.6"	"-1"	"-0.6"	"-0.6"	"D:\Project\project_nlp\Nlp\P1\nlp4j_baseline\output_grid\itp-1_sp-0.6_ep-0.6\nlp4j_hmm_metrics.json"
 "itp-1_sp-1_ep-1"	"OK"	"-1"	"-1"	"-1"	"-1"	"-1"	"-1"	"D:\Project\project_nlp\Nlp\P1\nlp4j_baseline\output_grid\itp-1_sp-1_ep-1\nlp4j_hmm_metrics.json"
-"itpm0p2_spm0p2_epm0p2"	"MISSING_METRICS"	"-0.2"	"-0.2"	"-0.2"				"D:\Project\project_nlp\Nlp\P1\nlp4j_baseline\output_grid\itpm0p2_spm0p2_epm0p2\nlp4j_hmm_metrics.json"
