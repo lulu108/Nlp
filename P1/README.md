@@ -127,7 +127,7 @@ P1 已在现有 `P1/nlp4j_baseline/` 目录上补充规则型 NLP4J 对照实验
 - 已完成 `sample_input.txt`、`sample_output.txt`、`convert_nlp4j_output.py`。
 - 已补充 `pom.xml` 与 `src/main/java/Nlp4jSequenceLabelingDemo.java`，并实现基于 `nlp4j-core` 的规则型中文序列标注 baseline。
 - 当前项目形态是 **Java/Maven 命令行程序**，不是 Spring Boot。
-- JDK 目标版本为 `17`。
+- JDK 目标版本为 `21`。
 
 该 baseline 规则与词典来源：
 
