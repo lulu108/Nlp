@@ -97,6 +97,8 @@
 3. （可选）python P1/BiLSTMCRF/03shrink_fasttext_vec.py
 4. python P1/BiLSTMCRF/train_bilstm_crf.py
 
+说明：`train_bilstm_crf.py` 默认使用裁剪后的字符子集预训练向量 `P1/BiLSTMCRF/data/cc.zh.300.char_subset.vec`；若文件不存在则按原逻辑随机初始化。
+
 ### 4.4 统一评测汇总（新增）
 
 在完成上述任意实验链路后，可执行统一汇总脚本：

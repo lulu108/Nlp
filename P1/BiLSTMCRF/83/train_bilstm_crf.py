@@ -9,11 +9,18 @@ sentence \t char1 char2 ... \t tag1 tag2 ... \t word1 word2 ...
 from pathlib import Path
 from typing import List, Tuple, Dict
 import random
+from collections import Counter
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
 
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
-
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 STATES = ["B", "M", "E", "S"]
 PAD_TOKEN = "<PAD>"
@@ -24,15 +31,22 @@ EOS_TOKEN = "<EOS>"
 EPOCHS = 30
 BATCH_SIZE = 16
 DROPOUT = 0.3
-PATIENCE = 5
+PATIENCE = 10
 RANDOM_SEED = 42
-CHAR_EMB_DIM = 128
+CHAR_EMB_DIM = 300
 BIGRAM_EMB_DIM = 64
 HIDDEN_DIM = 256
 LR = 1e-3
+EMB_LR = 3e-4
 WEIGHT_DECAY = 1e-4
-PRETRAINED_EMB_PATH = Path("./P1/BiLSTMCRF/data/pretrained_char_vec.txt")
+PRETRAINED_EMB_PATH = Path("./P1/BiLSTMCRF/data/cc.zh.300.vec/cc.zh.300.vec")
+# 重新裁剪PRETRAINED_EMB_PATH = Path("./P1/BiLSTMCRF/data/cc.zh.300.char_subset.vec")
 MIN_LR = 1e-5
+T_MAX = EPOCHS
+ETA_MIN = 1e-5
+FREEZE_CHAR_EMB_EPOCHS = 2
+SEED_LIST = [42, 52, 62, 72, 82]
+APPLY_BMES_REPAIR = True
 
 
 def set_seed(seed: int) -> None:
@@ -367,15 +381,52 @@ def tags_to_spans(tags: List[str]) -> List[Tuple[int, int]]:
     return spans
 
 
-def evaluate(model, dataloader, id2tag, device):
+def repair_bmes_tags(tags: List[str]) -> List[str]:
+    if not tags:
+        return tags
+
+    repaired = tags[:]
+    valid = {"B", "M", "E", "S"}
+
+    for i, t in enumerate(repaired):
+        if t not in valid:
+            repaired[i] = "S"
+
+    if repaired[0] in {"M", "E"}:
+        repaired[0] = "S"
+
+    for i in range(1, len(repaired)):
+        prev = repaired[i - 1]
+        curr = repaired[i]
+
+        if prev == "B" and curr in {"B", "S"}:
+            repaired[i - 1] = "S"
+            prev = "S"
+        elif prev == "M" and curr in {"B", "S"}:
+            repaired[i - 1] = "E"
+            prev = "E"
+
+        if prev in {"E", "S"} and curr in {"M", "E"}:
+            repaired[i] = "B"
+
+    if len(repaired) == 1 and repaired[0] in {"B", "M", "E"}:
+        repaired[0] = "S"
+    elif repaired[-1] in {"B", "M"}:
+        repaired[-1] = "E"
+
+    return repaired
+
+
+def repair_pred_ids(pred_ids: List[int], id2tag: Dict[int, str], tag2id: Dict[str, int]) -> List[int]:
+    pred_tags = [id2tag[t] for t in pred_ids]
+    repaired_tags = repair_bmes_tags(pred_tags)
+    return [tag2id[t] for t in repaired_tags]
+
+
+def predict_sequences(model, dataloader, id2tag, tag2id, device, apply_repair=True):
     model.eval()
-    total = 0
-    correct = 0
-    num_tags = len(id2tag)
-    confusion = [[0 for _ in range(num_tags)] for _ in range(num_tags)]
-    word_tp = 0
-    word_fp = 0
-    word_fn = 0
+    pred_sequences: List[List[int]] = []
+    gold_sequences: List[List[int]] = []
 
     with torch.no_grad():
         for x, b, y, mask, _ in dataloader:
@@ -388,20 +439,38 @@ def evaluate(model, dataloader, id2tag, device):
             for i in range(len(pred_paths)):
                 length = int(mask[i].sum().item())
                 pred = pred_paths[i][:length]
+                if apply_repair:
+                    pred = repair_pred_ids(pred, id2tag, tag2id)
                 gold = y[i][:length].tolist()
-                for t1, t2 in zip(gold, pred):
-                    total += 1
-                    if t1 == t2:
-                        correct += 1
-                    confusion[t1][t2] += 1
+                pred_sequences.append(pred)
+                gold_sequences.append(gold)
 
-                gold_tags = [id2tag[t] for t in gold]
-                pred_tags = [id2tag[t] for t in pred]
-                gold_spans = set(tags_to_spans(gold_tags))
-                pred_spans = set(tags_to_spans(pred_tags))
-                word_tp += len(gold_spans & pred_spans)
-                word_fp += len(pred_spans - gold_spans)
-                word_fn += len(gold_spans - pred_spans)
+    return pred_sequences, gold_sequences
+
+
+def evaluate_sequences(pred_sequences, gold_sequences, id2tag):
+    total = 0
+    correct = 0
+    num_tags = len(id2tag)
+    confusion = [[0 for _ in range(num_tags)] for _ in range(num_tags)]
+    word_tp = 0
+    word_fp = 0
+    word_fn = 0
+
+    for pred, gold in zip(pred_sequences, gold_sequences):
+        for t1, t2 in zip(gold, pred):
+            total += 1
+            if t1 == t2:
+                correct += 1
+            confusion[t1][t2] += 1
+
+        gold_tags = [id2tag[t] for t in gold]
+        pred_tags = [id2tag[t] for t in pred]
+        gold_spans = set(tags_to_spans(gold_tags))
+        pred_spans = set(tags_to_spans(pred_tags))
+        word_tp += len(gold_spans & pred_spans)
+        word_fp += len(pred_spans - gold_spans)
+        word_fn += len(gold_spans - pred_spans)
 
     acc = correct / total if total > 0 else 0.0
     word_precision = word_tp / (word_tp + word_fp) if (word_tp + word_fp) > 0 else 0.0
@@ -414,6 +483,40 @@ def evaluate(model, dataloader, id2tag, device):
     return acc, confusion, (word_precision, word_recall, word_f1)
 
 
+def evaluate(model, dataloader, id2tag, tag2id, device, apply_repair=True):
+    pred_sequences, gold_sequences = predict_sequences(
+        model,
+        dataloader,
+        id2tag,
+        tag2id,
+        device,
+        apply_repair=apply_repair,
+    )
+    return evaluate_sequences(pred_sequences, gold_sequences, id2tag)
+
+
+def majority_vote_ensemble(all_pred_sequences: List[List[List[int]]]) -> List[List[int]]:
+    if not all_pred_sequences:
+        return []
+
+    num_models = len(all_pred_sequences)
+    num_samples = len(all_pred_sequences[0])
+    ensemble_preds: List[List[int]] = []
+
+    for sample_idx in range(num_samples):
+        lengths = [len(all_pred_sequences[m][sample_idx]) for m in range(num_models)]
+        min_len = min(lengths)
+        voted_seq: List[int] = []
+        for pos in range(min_len):
+            votes = [all_pred_sequences[m][sample_idx][pos] for m in range(num_models)]
+            cnt = Counter(votes)
+            best_tag = sorted(cnt.items(), key=lambda x: (-x[1], x[0]))[0][0]
+            voted_seq.append(best_tag)
+        ensemble_preds.append(voted_seq)
+
+    return ensemble_preds
+
+
 def print_confusion_matrix(confusion, id2tag):
     tags = [id2tag[i] for i in range(len(id2tag))]
     header = "true\\pred\t" + "\t".join(tags)
@@ -423,33 +526,154 @@ def print_confusion_matrix(confusion, id2tag):
         print(f"{tag}\t{row}")
 
 
-def main():
-    data_dir = Path("./P1/BiLSTMCRF/data")
-    train_path = data_dir / "train.txt"
-    dev_path = data_dir / "dev.txt"
-    test_path = data_dir / "test.txt"
+def save_confusion_matrix_tsv(confusion, id2tag, output_path: Path) -> None:
+    tags = [id2tag[i] for i in range(len(id2tag))]
+    lines = ["true\\pred\t" + "\t".join(tags)]
+    for i, tag in enumerate(tags):
+        row = "\t".join(str(confusion[i][j]) for j in range(len(tags)))
+        lines.append(f"{tag}\t{row}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    if not (train_path.exists() and dev_path.exists() and test_path.exists()):
-        raise FileNotFoundError(
-            "Data not found. Run: python P1/BiLSTMCRF/02_prepare_data.py"
+
+def _load_preferred_font(size: int):
+    # Prefer readable CJK fonts on Windows; fallback to default font.
+    font_candidates = [
+        "C:/Windows/Fonts/msyh.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+    ]
+    if PIL_AVAILABLE:
+        for fp in font_candidates:
+            try:
+                return ImageFont.truetype(fp, size=size)
+            except Exception:
+                continue
+    return ImageFont.load_default()
+
+
+def _draw_centered_text(draw, box, text, font, fill):
+    x0, y0, x1, y1 = box
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+    tw = right - left
+    th = bottom - top
+    tx = x0 + (x1 - x0 - tw) / 2
+    ty = y0 + (y1 - y0 - th) / 2
+    draw.text((tx, ty), text, fill=fill, font=font)
+
+
+def save_confusion_matrix_png(confusion, id2tag, output_path: Path) -> None:
+    if not PIL_AVAILABLE:
+        print("Pillow is not installed. Skip confusion matrix PNG export.")
+        return
+
+    tags = [id2tag[i] for i in range(len(id2tag))]
+    n = len(tags)
+
+    cell = 150
+    left_margin = 180
+    top_margin = 180
+    right_margin = 60
+    bottom_margin = 80
+    width = left_margin + n * cell + right_margin
+    height = top_margin + n * cell + bottom_margin
+
+    img = Image.new("RGB", (width, height), "#f7f9fc")
+    draw = ImageDraw.Draw(img)
+    title_font = _load_preferred_font(34)
+    label_font = _load_preferred_font(24)
+    value_font = _load_preferred_font(20)
+    pct_font = _load_preferred_font(17)
+
+    total = sum(sum(row) for row in confusion)
+
+    max_val = max(max(row) for row in confusion) if confusion else 1
+    max_val = max(max_val, 1)
+
+    draw.text((left_margin, 25), "Confusion Matrix", fill="#1b2a41", font=title_font)
+    draw.text(
+        (left_margin, 70),
+        f"Rows=True Labels, Cols=Pred Labels, Total={total}",
+        fill="#3f4a5a",
+        font=label_font,
+    )
+
+    # Axis labels.
+    draw.text((left_margin + (n * cell) // 2 - 60, top_margin - 60), "Predicted", fill="#1b2a41", font=label_font)
+    draw.text((30, top_margin + (n * cell) // 2 - 10), "True", fill="#1b2a41", font=label_font)
+
+    for i, tag in enumerate(tags):
+        cx = left_margin + i * cell
+        cy = top_margin + i * cell
+        _draw_centered_text(
+            draw,
+            (cx, top_margin - 45, cx + cell, top_margin - 10),
+            tag,
+            label_font,
+            "#1b2a41",
+        )
+        _draw_centered_text(
+            draw,
+            (left_margin - 50, cy, left_margin - 10, cy + cell),
+            tag,
+            label_font,
+            "#1b2a41",
         )
 
-    set_seed(RANDOM_SEED)
+    for i in range(n):
+        row_sum = sum(confusion[i])
+        for j in range(n):
+            val = confusion[i][j]
+            ratio = val / max_val
+            shade = int(245 - ratio * 190)
+            color = (shade, shade + 5, 255)
 
-    train_samples = load_samples(train_path)
-    dev_samples = load_samples(dev_path)
-    test_samples = load_samples(test_path)
+            x0 = left_margin + j * cell
+            y0 = top_margin + i * cell
+            x1 = x0 + cell
+            y1 = y0 + cell
 
-    char2id = build_vocab(train_samples)
-    bigram2id = build_bigram_vocab(train_samples)
-    tag2id, id2tag = build_tag_vocab()
+            # Diagonal cells are emphasized with darker borders.
+            border_color = "#2f3b52" if i == j else "#8ea0b8"
+            border_width = 3 if i == j else 1
+            draw.rectangle([x0, y0, x1, y1], fill=color, outline=border_color, width=border_width)
 
-    train_ds = BMESDataset(train_samples, char2id, bigram2id, tag2id)
-    dev_ds = BMESDataset(dev_samples, char2id, bigram2id, tag2id)
-    test_ds = BMESDataset(test_samples, char2id, bigram2id, tag2id)
+            pct = (val / row_sum * 100.0) if row_sum > 0 else 0.0
+            _draw_centered_text(
+                draw,
+                (x0 + 4, y0 + 28, x1 - 4, y0 + 84),
+                str(val),
+                value_font,
+                "#102030",
+            )
+            _draw_centered_text(
+                draw,
+                (x0 + 4, y0 + 88, x1 - 4, y1 - 10),
+                f"{pct:.1f}%",
+                pct_font,
+                "#30435f",
+            )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(output_path)
+
+
+def train_one_seed(
+    seed: int,
+    train_ds,
+    dev_ds,
+    test_ds,
+    char2id,
+    bigram2id,
+    tag2id,
+    id2tag,
+    device,
+    output_dir: Path,
+):
+    set_seed(seed)
 
     data_generator = torch.Generator()
-    data_generator.manual_seed(RANDOM_SEED)
+    data_generator.manual_seed(seed)
 
     train_loader = DataLoader(
         train_ds,
@@ -461,7 +685,6 @@ def main():
     dev_loader = DataLoader(dev_ds, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = BiLSTMCRF(
         len(char2id),
         len(bigram2id),
@@ -471,36 +694,55 @@ def main():
         hidden_dim=HIDDEN_DIM,
         dropout=DROPOUT,
     ).to(device)
+
     pretrained_emb, hit = load_pretrained_char_embeddings(
         PRETRAINED_EMB_PATH,
         char2id,
         CHAR_EMB_DIM,
     )
     model.char_embedding.weight.data.copy_(pretrained_emb.to(device))
+
     if PRETRAINED_EMB_PATH.exists():
         print(
-            f"Loaded pretrained embeddings: {PRETRAINED_EMB_PATH} | "
+            f"[seed={seed}] Loaded pretrained embeddings: {PRETRAINED_EMB_PATH} | "
             f"matched={hit}/{len(char2id)} ({hit / max(1, len(char2id)):.2%})"
         )
     else:
-        print(f"Pretrained embeddings not found: {PRETRAINED_EMB_PATH}. Use random init.")
+        print(f"[seed={seed}] Pretrained embeddings not found: {PRETRAINED_EMB_PATH}. Use random init.")
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    # Freeze char embedding in early epochs, then unfreeze for task-specific fine-tuning.
+    if FREEZE_CHAR_EMB_EPOCHS > 0:
+        model.char_embedding.weight.requires_grad = False
+
+    non_char_params = [
+        p for n, p in model.named_parameters() if not n.startswith("char_embedding.")
+    ]
+    optimizer = torch.optim.AdamW(
+        [
+            {"params": non_char_params, "lr": LR, "weight_decay": WEIGHT_DECAY},
+            {
+                "params": [model.char_embedding.weight],
+                "lr": EMB_LR,
+                "weight_decay": WEIGHT_DECAY,
+            },
+        ]
+    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
-        mode="max",
-        factor=0.5,
-        patience=1,
-        min_lr=MIN_LR,
+        T_max=T_MAX,
+        eta_min=ETA_MIN,
     )
 
     best_word_f1 = -1.0
     best_acc = 0.0
     no_improve = 0
-    output_dir = Path("./P1/BiLSTMCRF/output")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    best_model_path = output_dir / f"best_seed_{seed}.pt"
 
     for epoch in range(1, EPOCHS + 1):
+        if FREEZE_CHAR_EMB_EPOCHS > 0 and epoch == FREEZE_CHAR_EMB_EPOCHS + 1:
+            model.char_embedding.weight.requires_grad = True
+            print(f"[seed={seed}] Unfreeze char embedding at epoch {epoch}.")
+
         model.train()
         total_loss = 0.0
         for x, b, y, mask, _ in train_loader:
@@ -516,36 +758,157 @@ def main():
             optimizer.step()
             total_loss += loss.item()
 
-        dev_acc, _, (wp, wr, wf1) = evaluate(model, dev_loader, id2tag, device)
-        scheduler.step(wf1)
-        curr_lr = optimizer.param_groups[0]["lr"]
+        dev_acc, _, (wp, wr, wf1) = evaluate(
+            model,
+            dev_loader,
+            id2tag,
+            tag2id,
+            device,
+            apply_repair=APPLY_BMES_REPAIR,
+        )
+        scheduler.step()
+        curr_main_lr = optimizer.param_groups[0]["lr"]
+        curr_emb_lr = optimizer.param_groups[1]["lr"]
 
         improved = wf1 > best_word_f1 or (wf1 == best_word_f1 and dev_acc > best_acc)
         if improved:
             best_word_f1 = wf1
             best_acc = dev_acc
             no_improve = 0
-            torch.save(model.state_dict(), output_dir / "best.pt")
+            torch.save(model.state_dict(), best_model_path)
         else:
             no_improve += 1
 
         print(
-            f"Epoch {epoch} | loss={total_loss:.4f} | "
+            f"[seed={seed}] Epoch {epoch} | loss={total_loss:.4f} | "
             f"dev_acc={dev_acc:.4f} | word_F1={wf1:.4f} | "
-            f"best_word_F1={best_word_f1:.4f} | lr={curr_lr:.6f} | no_improve={no_improve}"
+            f"best_word_F1={best_word_f1:.4f} | "
+            f"lr_main={curr_main_lr:.6f} | lr_emb={curr_emb_lr:.6f} | no_improve={no_improve}"
         )
 
         if no_improve >= PATIENCE:
-            print(f"Early stop at epoch {epoch} (patience={PATIENCE}).")
+            print(f"[seed={seed}] Early stop at epoch {epoch} (patience={PATIENCE}).")
             break
 
-    print("\n===== Test Evaluation =====")
-    model.load_state_dict(torch.load(output_dir / "best.pt", map_location=device))
-    test_acc, confusion, (wp, wr, wf1) = evaluate(model, test_loader, id2tag, device)
-    print(f"Test tag accuracy: {test_acc:.4f}")
-    print(f"Test word-level: P={wp:.4f} R={wr:.4f} F1={wf1:.4f}")
-    print_confusion_matrix(confusion, id2tag)
+    model.load_state_dict(torch.load(best_model_path, map_location=device))
+    test_acc, confusion, (wp, wr, wf1) = evaluate(
+        model,
+        test_loader,
+        id2tag,
+        tag2id,
+        device,
+        apply_repair=APPLY_BMES_REPAIR,
+    )
+    pred_sequences, gold_sequences = predict_sequences(
+        model,
+        test_loader,
+        id2tag,
+        tag2id,
+        device,
+        apply_repair=APPLY_BMES_REPAIR,
+    )
 
+    return {
+        "seed": seed,
+        "best_model_path": best_model_path,
+        "test_acc": test_acc,
+        "test_p": wp,
+        "test_r": wr,
+        "test_f1": wf1,
+        "confusion": confusion,
+        "test_preds": pred_sequences,
+        "test_golds": gold_sequences,
+    }
+
+
+def main():
+    data_dir = Path("./P1/BiLSTMCRF/data")
+    train_path = data_dir / "train.txt"
+    dev_path = data_dir / "dev.txt"
+    test_path = data_dir / "test.txt"
+
+    if not (train_path.exists() and dev_path.exists() and test_path.exists()):
+        raise FileNotFoundError(
+            "Data not found. Run: python P1/BiLSTMCRF/02_prepare_data.py"
+        )
+
+    train_samples = load_samples(train_path)
+    dev_samples = load_samples(dev_path)
+    test_samples = load_samples(test_path)
+
+    char2id = build_vocab(train_samples)
+    bigram2id = build_bigram_vocab(train_samples)
+    tag2id, id2tag = build_tag_vocab()
+
+    train_ds = BMESDataset(train_samples, char2id, bigram2id, tag2id)
+    dev_ds = BMESDataset(dev_samples, char2id, bigram2id, tag2id)
+    test_ds = BMESDataset(test_samples, char2id, bigram2id, tag2id)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    output_dir = Path("./P1/BiLSTMCRF/output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    seed_results = []
+    for seed in SEED_LIST:
+        print(f"\n===== Train seed={seed} =====")
+        result = train_one_seed(
+            seed,
+            train_ds,
+            dev_ds,
+            test_ds,
+            char2id,
+            bigram2id,
+            tag2id,
+            id2tag,
+            device,
+            output_dir,
+        )
+        seed_results.append(result)
+        print(
+            f"[seed={seed}] Test tag accuracy: {result['test_acc']:.4f} | "
+            f"P={result['test_p']:.4f} R={result['test_r']:.4f} F1={result['test_f1']:.4f}"
+        )
+
+    best_single = max(seed_results, key=lambda x: x["test_f1"])
+    print("\n===== Best Single-Seed Evaluation =====")
+    print(f"best_seed: {best_single['seed']}")
+    print(f"Test tag accuracy: {best_single['test_acc']:.4f}")
+    print(
+        f"Test word-level: P={best_single['test_p']:.4f} "
+        f"R={best_single['test_r']:.4f} F1={best_single['test_f1']:.4f}"
+    )
+    print_confusion_matrix(best_single["confusion"], id2tag)
+
+    best_cm_png = output_dir / f"confusion_matrix_seed_{best_single['seed']}.png"
+    save_confusion_matrix_png(best_single["confusion"], id2tag, best_cm_png)
+    if PIL_AVAILABLE:
+        print(f"Saved single-seed confusion matrix figure to: {best_cm_png}")
+    else:
+        best_cm_tsv = output_dir / f"confusion_matrix_seed_{best_single['seed']}.tsv"
+        save_confusion_matrix_tsv(best_single["confusion"], id2tag, best_cm_tsv)
+        print(f"Saved single-seed confusion matrix table to: {best_cm_tsv}")
+
+    print("\n===== Ensemble Evaluation (Majority Vote) =====")
+    all_seed_preds = [r["test_preds"] for r in seed_results]
+    ensemble_preds = majority_vote_ensemble(all_seed_preds)
+    gold_sequences = seed_results[0]["test_golds"]
+    ens_acc, ens_confusion, (ens_p, ens_r, ens_f1) = evaluate_sequences(
+        ensemble_preds,
+        gold_sequences,
+        id2tag,
+    )
+    print(f"Ensemble tag accuracy: {ens_acc:.4f}")
+    print(f"Ensemble word-level: P={ens_p:.4f} R={ens_r:.4f} F1={ens_f1:.4f}")
+    print_confusion_matrix(ens_confusion, id2tag)
+
+    ens_cm_png = output_dir / "confusion_matrix_ensemble.png"
+    save_confusion_matrix_png(ens_confusion, id2tag, ens_cm_png)
+    if PIL_AVAILABLE:
+        print(f"Saved ensemble confusion matrix figure to: {ens_cm_png}")
+    else:
+        ens_cm_tsv = output_dir / "confusion_matrix_ensemble.tsv"
+        save_confusion_matrix_tsv(ens_confusion, id2tag, ens_cm_tsv)
+        print(f"Saved ensemble confusion matrix table to: {ens_cm_tsv}")
 
 if __name__ == "__main__":
     main()

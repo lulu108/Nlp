@@ -53,6 +53,16 @@ class HMM:
     def __init__(self):
         self.states = STATES
 
+        # BMES legality constraints
+        self.ALLOWED_START = {"B", "S"}
+        self.ALLOWED_END = {"E", "S"}
+        self.ALLOWED_TRANSITIONS = {
+            "B": {"M", "E"},
+            "M": {"M", "E"},
+            "E": {"B", "S"},
+            "S": {"B", "S"},
+        }
+
         # 计数
         self.pi_count = defaultdict(int)                        # 初始状态计数
         self.trans_count = {s: defaultdict(int) for s in STATES}  # 转移计数
@@ -129,11 +139,16 @@ class HMM:
         """
         给定字序列，返回最优标签序列
         """
+        neg_inf = -1e18
         V = [{}]
         path = {}
 
         # 初始化
         for s in self.states:
+            if s not in self.ALLOWED_START:
+                V[0][s] = neg_inf
+                path[s] = [s]
+                continue
             V[0][s] = self.pi[s] + self.get_emit_logprob(s, chars[0])
             path[s] = [s]
 
@@ -145,21 +160,29 @@ class HMM:
             for curr_state in self.states:
                 candidates = []
                 for prev_state in self.states:
+                    if curr_state not in self.ALLOWED_TRANSITIONS.get(prev_state, set()):
+                        continue
                     score = (
                         V[t - 1][prev_state]
                         + self.trans[prev_state][curr_state]
                         + self.get_emit_logprob(curr_state, chars[t])
                     )
                     candidates.append((score, prev_state))
-
-                best_score, best_prev = max(candidates, key=lambda x: x[0])
-                V[t][curr_state] = best_score
-                new_path[curr_state] = path[best_prev] + [curr_state]
+                if candidates:
+                    best_score, best_prev = max(candidates, key=lambda x: x[0])
+                    V[t][curr_state] = best_score
+                    new_path[curr_state] = path[best_prev] + [curr_state]
+                else:
+                    V[t][curr_state] = neg_inf
+                    new_path[curr_state] = path[curr_state] + [curr_state]
 
             path = new_path
 
         # 终止
-        final_score, final_state = max((V[-1][s], s) for s in self.states)
+        final_candidates = [(V[-1][s], s) for s in self.states if s in self.ALLOWED_END]
+        if not final_candidates:
+            final_candidates = [(V[-1][s], s) for s in self.states]
+        final_score, final_state = max(final_candidates, key=lambda x: x[0])
         return path[final_state]
 
     @staticmethod
@@ -261,30 +284,29 @@ def calc_precision_recall_f1(confusion, states):
 def save_confusion_matrix_plot(confusion, states, out_path: Path):
     try:
         import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(figsize=(5, 4))
+        ax.imshow(confusion, cmap="Blues")
+
+        ax.set_xticks(range(len(states)))
+        ax.set_yticks(range(len(states)))
+        ax.set_xticklabels(states)
+        ax.set_yticklabels(states)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("True")
+        ax.set_title("BMES Confusion Matrix")
+
+        # annotate cells
+        for i in range(len(states)):
+            for j in range(len(states)):
+                ax.text(j, i, str(confusion[i][j]), ha="center", va="center", fontsize=8)
+
+        fig.tight_layout()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out_path, dpi=200)
+        plt.close(fig)
     except Exception:
-        print("matplotlib 未安装，已跳过混淆矩阵图保存。")
-        return
-
-    fig, ax = plt.subplots(figsize=(5, 4))
-    ax.imshow(confusion, cmap="Blues")
-
-    ax.set_xticks(range(len(states)))
-    ax.set_yticks(range(len(states)))
-    ax.set_xticklabels(states)
-    ax.set_yticklabels(states)
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("True")
-    ax.set_title("BMES Confusion Matrix")
-
-    # annotate cells
-    for i in range(len(states)):
-        for j in range(len(states)):
-            ax.text(j, i, str(confusion[i][j]), ha="center", va="center", fontsize=8)
-
-    fig.tight_layout()
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_path, dpi=200)
-    plt.close(fig)
+        print("混淆矩阵图保存失败，已跳过。")
 
 
 def main():
@@ -319,11 +341,14 @@ def main():
         p, r, f1 = metrics[s]
         print(f"{s}: P={p:.4f} R={r:.4f} F1={f1:.4f}")
 
-    save_confusion_matrix_plot(
-        confusion,
-        STATES,
-        Path("./P1/output/confusion_matrix.png")
-    )
+    try:
+        save_confusion_matrix_plot(
+            confusion,
+            STATES,
+            Path("./P1/output/confusion_matrix.png")
+        )
+    except Exception:
+        print("混淆矩阵图保存失败，已跳过。")
 
     print("\n===== 预测样例 =====")
     for i, ex in enumerate(examples, 1):
