@@ -77,8 +77,26 @@
 
 1. 预处理：python P1/01preprocess.py
 2. 构建 BMES：python P1/02build_bmes_dataset.py
-3. 训练评估 HMM：python P1/03train_hmm.py
+3. 训练评估 HMM（默认主线数据）：python P1/03train_hmm.py --dataset auto
 4. NER 导出：python P1/04ner_hanlp.py
+
+如果希望让 HMM 与 BiLSTM-CRF 使用同一数据划分做公平比较，可以改用：
+
+1. `python P1/03train_hmm.py --dataset bilstmcrf`
+
+如果希望在 BiLSTM-CRF 的 dev 集上选择更合适的 alpha，可以使用：
+
+1. `python P1/03train_hmm.py --dataset bilstmcrf --use-dev-tune`
+2. `python P1/03train_hmm.py --dataset bilstmcrf --use-dev-tune --train-with-dev`
+
+说明：该模式只改变数据来源与 HMM 的平滑/解码策略，不改变 HMM 模型本质。dev 只用于选择 alpha，test 只用于最终评估。
+
+建议保存日志：
+
+- `python P1/03train_hmm.py --dataset auto > P1/logs/hmm_main_latest.txt`
+- `python P1/03train_hmm.py --dataset bilstmcrf > P1/logs/hmm_bilstm_data_latest.txt`
+- `python P1/03train_hmm.py --dataset bilstmcrf --use-dev-tune > P1/logs/hmm_bilstm_data_latest.txt`
+- `python P1/03train_hmm.py --dataset bilstmcrf --use-dev-tune --train-with-dev > P1/logs/hmm_bilstm_data_latest.txt`
 
 ### 4.2 迭代链路（P1/test2，可选）
 
@@ -113,6 +131,11 @@
 
 - PowerShell：python P1/03train_hmm.py | Out-File -FilePath P1/logs/hmm_main_latest.txt -Encoding utf8
 - CMD：python P1/03train_hmm.py > P1\\logs\\hmm_main_latest.txt
+
+如果希望汇总 HMM-on-BiLSTMCRF split，请先保存：
+
+- PowerShell：python P1/03train_hmm.py --dataset bilstmcrf | Out-File -FilePath P1/logs/hmm_bilstm_data_latest.txt -Encoding utf8
+- CMD：python P1/03train_hmm.py --dataset bilstmcrf > P1\\logs\\hmm_bilstm_data_latest.txt
 
 然后再执行：python P1/scripts/collect_metrics.py
 

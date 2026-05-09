@@ -234,6 +234,54 @@ def parse_hmm_main() -> Dict[str, str]:
     }
 
 
+def parse_hmm_bilstm_data() -> Dict[str, str]:
+    latest_log = P1_DIR / "logs" / "hmm_bilstm_data_latest.txt"
+    latest_log_display = "P1/logs/hmm_bilstm_data_latest.txt"
+    latest_text = read_text_auto(latest_log)
+
+    if not latest_text:
+        return {
+            "实验链路": "P1 HMM on BiLSTMCRF split",
+            "标签准确率": "待补充",
+            "标签级Macro Precision": "待补充",
+            "标签级Macro Recall": "待补充",
+            "标签级Macro F1": "待补充",
+            "token数": "待补充",
+            "PER实体数": "待补充",
+            "LOC实体数": "待补充",
+            "ORG实体数": "待补充",
+            "交叉验证Mean": "待补充",
+            "交叉验证Std": "待补充",
+            "训练样本数": "待补充",
+            "测试样本数": "待补充",
+            "指标来源": latest_log_display,
+            "备注": "日志不存在，待生成 HMM-on-BiLSTMCRF split 结果",
+        }
+
+    train_samples = parse_int(r"训练集样本数[:：]\s*(\d+)", latest_text)
+    test_samples = parse_int(r"测试集样本数[:：]\s*(\d+)", latest_text)
+    tag_acc = parse_float(r"测试集标签级准确率[:：]\s*([0-9.]+)", latest_text)
+    macro_p, macro_r, macro_f1 = parse_per_tag_metrics(latest_text)
+
+    return {
+        "实验链路": "P1 HMM on BiLSTMCRF split",
+        "标签准确率": fmt_metric(tag_acc),
+        "标签级Macro Precision": fmt_metric(macro_p),
+        "标签级Macro Recall": fmt_metric(macro_r),
+        "标签级Macro F1": fmt_metric(macro_f1),
+        "token数": "待补充",
+        "PER实体数": "待补充",
+        "LOC实体数": "待补充",
+        "ORG实体数": "待补充",
+        "交叉验证Mean": "待补充",
+        "交叉验证Std": "待补充",
+        "训练样本数": str(train_samples) if train_samples is not None else "待补充",
+        "测试样本数": str(test_samples) if test_samples is not None else "待补充",
+        "指标来源": latest_log_display,
+        "备注": "HMM 使用与 BiLSTM-CRF 相同的 train/test 划分，用于同口径对照。",
+    }
+
+
 def parse_hmm_test2() -> Dict[str, str]:
     metrics_path = P1_DIR / "test2" / "output" / "metrics.json"
     if metrics_path.exists():
@@ -565,6 +613,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     by_chain = {row["实验链路"]: row for row in rows}
 
     hmm_main = by_chain.get("P1 主线 HMM", {})
+    hmm_bilstm = by_chain.get("P1 HMM on BiLSTMCRF split", {})
     bilstm = by_chain.get("P1/BiLSTMCRF 深度学习版本", {})
     hmm_test2 = parse_hmm_test2()
 
@@ -588,6 +637,7 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
 
     lines.append("## 2.1 数据口径说明")
     lines.append("- P1 主线 HMM 与 BiLSTM-CRF 的训练/测试样本数不同，当前结果用于方法趋势对照，不作为严格同测试集公平排名。")
+    lines.append("- 新增 HMM-on-BiLSTMCRF split 使用与 BiLSTM-CRF 相同的 train/test 划分，用于同口径公平对照。")
     lines.append("- 若需要严格公平比较，应统一 train/dev/test 划分后重新训练。")
     lines.append("")
 
@@ -597,6 +647,14 @@ def build_md(rows: List[Dict[str, str]], ner_samples: List[Dict[str, str]]) -> s
     lines.append(f"- 交叉验证 Mean/Std: {hmm_main.get('交叉验证Mean', '待补充')} / {hmm_main.get('交叉验证Std', '待补充')}")
     lines.append(f"- 指标来源: {hmm_main.get('指标来源', '待补充')}")
     lines.append(f"- 备注: {hmm_main.get('备注', '待补充')}")
+    lines.append("")
+
+    lines.append("## 3.1 HMM on BiLSTMCRF Split")
+    lines.append(f"- 标签准确率: {hmm_bilstm.get('标签准确率', '待补充')}")
+    lines.append(f"- 标签级 Macro Precision/Recall/F1: {hmm_bilstm.get('标签级Macro Precision', '待补充')} / {hmm_bilstm.get('标签级Macro Recall', '待补充')} / {hmm_bilstm.get('标签级Macro F1', '待补充')}")
+    lines.append(f"- 训练/测试样本数: {hmm_bilstm.get('训练样本数', '待补充')} / {hmm_bilstm.get('测试样本数', '待补充')}")
+    lines.append(f"- 指标来源: {hmm_bilstm.get('指标来源', '待补充')}")
+    lines.append(f"- 备注: {hmm_bilstm.get('备注', '待补充')}")
     lines.append("")
 
     lines.append("## 4. BiLSTM-CRF 结果")
@@ -668,6 +726,7 @@ def main() -> None:
 
     rows = [
         parse_hmm_main(),
+        parse_hmm_bilstm_data(),
         parse_bilstm_crf(),
         parse_nlp4j_baseline(),
         parse_nlp4j_hmm(),

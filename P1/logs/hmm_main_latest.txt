@@ -1,5 +1,14 @@
-﻿训练集样本数: 310
+﻿数据源: auto
+训练集路径: P1\datasets\auto\train.txt
+测试集路径: P1\datasets\auto\test.txt
+BMES 合法约束: 开启
+初始 alpha: 1.0
+使用 dev 调参: 关闭
+使用 train+dev 训练最终模型: 关闭
+训练集样本数: 310
 测试集样本数: 77
+最终训练集: train only (样本数=310)
+最终使用 alpha: 1.00
 
 ===== HMM 参数示例 =====
 初始状态概率（log）:
