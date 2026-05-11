@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-KMeans feature-parameter grid search for P2.
+SVD + KMeans grid search for P2.
 
 Goal:
-    Search TF-IDF feature parameters for original TF-IDF + KMeans.
+    Test TF-IDF -> TruncatedSVD -> Normalizer -> KMeans.
 
 Default input:
     P2/data/news_for_cluster_800.csv
 
 Default outputs:
-    P2/data/grid_search/kmeans_features_800/
-        kmeans_feature_grid_800.csv
-        kmeans_feature_grid_top_800.csv
-        kmeans_feature_grid_best_800.json
-        cluster_result_kmeans_feature_best_800.csv
-        cluster_crosstab_kmeans_feature_best_800.csv
+    P2/data/grid_search/svd_kmeans_800/
+        svd_kmeans_grid_800.csv
+        svd_kmeans_grid_top_800.csv
+        svd_kmeans_grid_best_800.json
+        cluster_result_svd_kmeans_best_800.csv
+        cluster_crosstab_svd_kmeans_best_800.csv
 """
 
 from __future__ import annotations
@@ -29,8 +29,11 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
 from sklearn.cluster import KMeans
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, silhouette_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import Normalizer
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -52,11 +55,7 @@ def parse_float_list(text: str) -> list[float]:
 
 
 def parse_ngram_ranges(text: str) -> list[tuple[int, int]]:
-    """
-    Example:
-        "2-3,2-4,3-5" -> [(2,3), (2,4), (3,5)]
-    """
-    ranges: list[tuple[int, int]] = []
+    ranges = []
     for seg in str(text).split(","):
         seg = seg.strip()
         if not seg:
@@ -87,9 +86,6 @@ def find_column(columns, candidates):
 
 
 def clustering_accuracy(y_true, y_pred):
-    """
-    Calculate clustering ACC with Hungarian matching.
-    """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
 
@@ -143,7 +139,7 @@ def build_vectorizer(
 
 
 def evaluate_clustering(
-    X,
+    X_for_silhouette,
     y_true,
     y_pred,
     skip_silhouette: bool,
@@ -158,7 +154,7 @@ def evaluate_clustering(
         unique_pred = np.unique(y_pred)
         if 1 < len(unique_pred) < len(y_pred):
             try:
-                sil = silhouette_score(X, y_pred, metric="cosine")
+                sil = silhouette_score(X_for_silhouette, y_pred, metric="cosine")
             except Exception as exc:
                 print(f"[WARN] silhouette_score failed: {exc}", flush=True)
                 sil = np.nan
@@ -174,52 +170,49 @@ def evaluate_clustering(
     }
 
 
-def run_single_kmeans(
-    texts: pd.Series,
+def run_single_svd_kmeans(
+    X_tfidf,
     y_true: np.ndarray,
     *,
-    feature_mode: str,
-    max_df: float,
-    min_df: int,
-    ngram_range: tuple[int, int],
-    max_features: int | None,
-    sublinear_tf: bool,
+    svd_dim: int,
     n_clusters: int,
     seed: int,
     n_init: int,
     skip_silhouette: bool,
 ):
-    vectorizer = build_vectorizer(
-        feature_mode=feature_mode,
-        max_df=max_df,
-        min_df=min_df,
-        ngram_range=ngram_range,
-        max_features=max_features,
-        sublinear_tf=sublinear_tf,
-    )
+    safe_dim = min(svd_dim, X_tfidf.shape[0] - 1, X_tfidf.shape[1] - 1)
+    if safe_dim < 2:
+        raise ValueError(f"Invalid svd_dim after clipping: {safe_dim}")
 
     start = time.perf_counter()
-    X = vectorizer.fit_transform(texts)
+
+    reducer = make_pipeline(
+        TruncatedSVD(n_components=safe_dim, random_state=seed),
+        Normalizer(copy=False),
+    )
+    X_svd = reducer.fit_transform(X_tfidf)
+
     kmeans = KMeans(
         n_clusters=n_clusters,
         random_state=seed,
         n_init=n_init,
     )
-    y_pred = kmeans.fit_predict(X)
+    y_pred = kmeans.fit_predict(X_svd)
+
     elapsed = time.perf_counter() - start
 
     metrics = evaluate_clustering(
-        X=X,
+        X_for_silhouette=X_svd,
         y_true=y_true,
         y_pred=y_pred,
         skip_silhouette=skip_silhouette,
     )
 
     return {
-        "X": X,
+        "X_svd": X_svd,
         "y_pred": y_pred,
         "kmeans": kmeans,
-        "vectorizer": vectorizer,
+        "svd_dim_used": safe_dim,
         "elapsed_seconds": elapsed,
         **metrics,
     }
@@ -260,32 +253,37 @@ def main():
 
     parser.add_argument("--n-clusters", type=int, default=4)
     parser.add_argument("--feature-mode", choices=["word", "char"], default="char")
-    parser.add_argument("--ngram-ranges", default="2-3,2-4,3-5")
-    parser.add_argument("--min-dfs", default="1,2,3")
-    parser.add_argument("--max-dfs", default="0.85,0.90,0.95,1.0")
-    parser.add_argument("--max-features-list", default="30000,40000,60000,80000")
-    parser.add_argument("--seeds", default="21,42,52,66,100")
-    parser.add_argument("--n-init", type=int, default=120)
+    parser.add_argument("--ngram-ranges", default="2-4")
+    parser.add_argument("--min-dfs", default="2")
+    parser.add_argument("--max-dfs", default="0.95")
+    parser.add_argument("--max-features-list", default="40000")
     parser.add_argument("--sublinear-tf", default="true")
-    parser.add_argument("--skip-silhouette", default="true")
+
+    parser.add_argument("--svd-dims", default="50,100,150,200,300")
+    parser.add_argument("--seeds", default="42,52,66")
+    parser.add_argument("--n-inits", default="80,120")
+    parser.add_argument("--skip-silhouette", default="false")
     parser.add_argument("--top-k", type=int, default=20)
 
     args = parser.parse_args()
 
     input_path = Path(args.input)
     output_root = Path(args.output_root)
-    output_dir = Path(args.output_dir) if args.output_dir else output_root / f"kmeans_features_{args.tag}"
+    output_dir = Path(args.output_dir) if args.output_dir else output_root / f"svd_kmeans_{args.tag}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     ngram_ranges = parse_ngram_ranges(args.ngram_ranges)
     min_dfs = parse_int_list(args.min_dfs)
     max_dfs = parse_float_list(args.max_dfs)
     max_features_list = parse_int_list(args.max_features_list)
+    svd_dims = parse_int_list(args.svd_dims)
     seeds = parse_int_list(args.seeds)
+    n_inits = parse_int_list(args.n_inits)
+
     sublinear_tf = parse_bool(args.sublinear_tf)
     skip_silhouette = parse_bool(args.skip_silhouette)
 
-    print("===== KMeans feature grid search =====", flush=True)
+    print("===== SVD + KMeans grid search =====", flush=True)
     print(f"input: {input_path}", flush=True)
     print(f"output_dir: {output_dir}", flush=True)
 
@@ -310,91 +308,54 @@ def main():
     id_to_label = {i: label for label, i in label_to_id.items()}
     y_true = df[label_col].map(label_to_id).values
 
-    total = (
-        len(ngram_ranges)
-        * len(min_dfs)
-        * len(max_dfs)
-        * len(max_features_list)
-        * len(seeds)
-    )
-
     rows = []
     best_cache = None
     best_key = None
 
-    for idx, (ngram_range, min_df, max_df, max_features, seed) in enumerate(
-        product(ngram_ranges, min_dfs, max_dfs, max_features_list, seeds),
-        start=1,
-    ):
+    tfidf_configs = list(product(ngram_ranges, min_dfs, max_dfs, max_features_list))
+    total = len(tfidf_configs) * len(svd_dims) * len(seeds) * len(n_inits)
+    idx = 0
+
+    for ngram_range, min_df, max_df, max_features in tfidf_configs:
         print(
-            f"===== [{idx}/{total}] "
-            f"ngram={ngram_range}, min_df={min_df}, max_df={max_df}, "
-            f"max_features={max_features}, seed={seed} =====",
+            f"===== TF-IDF build: ngram={ngram_range}, min_df={min_df}, "
+            f"max_df={max_df}, max_features={max_features} =====",
             flush=True,
         )
 
         try:
-            result = run_single_kmeans(
-                texts=df[text_col],
-                y_true=y_true,
+            vectorizer = build_vectorizer(
                 feature_mode=args.feature_mode,
                 max_df=max_df,
                 min_df=min_df,
                 ngram_range=ngram_range,
                 max_features=max_features,
                 sublinear_tf=sublinear_tf,
-                n_clusters=args.n_clusters,
-                seed=seed,
-                n_init=args.n_init,
-                skip_silhouette=skip_silhouette,
             )
-
-            row = {
-                "rank_id": idx,
-                "tag": args.tag,
-                "feature_mode": args.feature_mode,
-                "ngram_range": str(ngram_range),
-                "min_df": min_df,
-                "max_df": max_df,
-                "max_features": max_features,
-                "sublinear_tf": sublinear_tf,
-                "seed": seed,
-                "n_init": args.n_init,
-                "n_samples": len(df),
-                "n_clusters": args.n_clusters,
-                "vocab_size": int(result["X"].shape[1]),
-                "acc": round(result["acc"], 6),
-                "nmi": round(result["nmi"], 6),
-                "ari": round(result["ari"], 6),
-                "silhouette_cosine": (
-                    round(result["silhouette_cosine"], 6)
-                    if not np.isnan(result["silhouette_cosine"])
-                    else np.nan
-                ),
-                "elapsed_seconds": round(result["elapsed_seconds"], 4),
-                "cluster_to_label_mapping": str(result["cluster_to_label_mapping"]),
-            }
-            rows.append(row)
-
-            key = (
-                row["acc"],
-                row["nmi"],
-                row["ari"],
-                -999 if pd.isna(row["silhouette_cosine"]) else row["silhouette_cosine"],
-            )
-
-            if best_key is None or key > best_key:
-                best_key = key
-                best_cache = {
-                    "row": row,
-                    "y_pred": result["y_pred"],
-                    "mapping": result["cluster_to_label_mapping"],
-                }
-
+            X_tfidf = vectorizer.fit_transform(df[text_col])
         except Exception as exc:
-            print(f"[WARN] failed: {exc}", flush=True)
-            rows.append(
-                {
+            print(f"[WARN] TF-IDF failed: {exc}", flush=True)
+            continue
+
+        for svd_dim, seed, n_init in product(svd_dims, seeds, n_inits):
+            idx += 1
+            print(
+                f"===== [{idx}/{total}] svd_dim={svd_dim}, seed={seed}, n_init={n_init} =====",
+                flush=True,
+            )
+
+            try:
+                result = run_single_svd_kmeans(
+                    X_tfidf=X_tfidf,
+                    y_true=y_true,
+                    svd_dim=svd_dim,
+                    n_clusters=args.n_clusters,
+                    seed=seed,
+                    n_init=n_init,
+                    skip_silhouette=skip_silhouette,
+                )
+
+                row = {
                     "rank_id": idx,
                     "tag": args.tag,
                     "feature_mode": args.feature_mode,
@@ -403,11 +364,60 @@ def main():
                     "max_df": max_df,
                     "max_features": max_features,
                     "sublinear_tf": sublinear_tf,
+                    "svd_dim": svd_dim,
+                    "svd_dim_used": result["svd_dim_used"],
                     "seed": seed,
-                    "n_init": args.n_init,
-                    "error": str(exc),
+                    "n_init": n_init,
+                    "n_samples": len(df),
+                    "n_clusters": args.n_clusters,
+                    "vocab_size": int(X_tfidf.shape[1]),
+                    "acc": round(result["acc"], 6),
+                    "nmi": round(result["nmi"], 6),
+                    "ari": round(result["ari"], 6),
+                    "silhouette_cosine": (
+                        round(result["silhouette_cosine"], 6)
+                        if not np.isnan(result["silhouette_cosine"])
+                        else np.nan
+                    ),
+                    "elapsed_seconds": round(result["elapsed_seconds"], 4),
+                    "cluster_to_label_mapping": str(result["cluster_to_label_mapping"]),
+                    "representation": "TF-IDF + TruncatedSVD + Normalizer",
                 }
-            )
+                rows.append(row)
+
+                key = (
+                    row["acc"],
+                    row["nmi"],
+                    row["ari"],
+                    -999 if pd.isna(row["silhouette_cosine"]) else row["silhouette_cosine"],
+                )
+
+                if best_key is None or key > best_key:
+                    best_key = key
+                    best_cache = {
+                        "row": row,
+                        "y_pred": result["y_pred"],
+                        "mapping": result["cluster_to_label_mapping"],
+                    }
+
+            except Exception as exc:
+                print(f"[WARN] failed: {exc}", flush=True)
+                rows.append(
+                    {
+                        "rank_id": idx,
+                        "tag": args.tag,
+                        "feature_mode": args.feature_mode,
+                        "ngram_range": str(ngram_range),
+                        "min_df": min_df,
+                        "max_df": max_df,
+                        "max_features": max_features,
+                        "sublinear_tf": sublinear_tf,
+                        "svd_dim": svd_dim,
+                        "seed": seed,
+                        "n_init": n_init,
+                        "error": str(exc),
+                    }
+                )
 
     grid_df = pd.DataFrame(rows).sort_values(
         by=["acc", "nmi", "ari", "silhouette_cosine"],
@@ -415,17 +425,17 @@ def main():
         na_position="last",
     )
 
-    grid_path = output_dir / f"kmeans_feature_grid_{args.tag}.csv"
-    top_path = output_dir / f"kmeans_feature_grid_top_{args.tag}.csv"
-    best_json_path = output_dir / f"kmeans_feature_grid_best_{args.tag}.json"
-    result_path = output_dir / f"cluster_result_kmeans_feature_best_{args.tag}.csv"
-    crosstab_path = output_dir / f"cluster_crosstab_kmeans_feature_best_{args.tag}.csv"
+    grid_path = output_dir / f"svd_kmeans_grid_{args.tag}.csv"
+    top_path = output_dir / f"svd_kmeans_grid_top_{args.tag}.csv"
+    best_json_path = output_dir / f"svd_kmeans_grid_best_{args.tag}.json"
+    result_path = output_dir / f"cluster_result_svd_kmeans_best_{args.tag}.csv"
+    crosstab_path = output_dir / f"cluster_crosstab_svd_kmeans_best_{args.tag}.csv"
 
     grid_df.to_csv(grid_path, index=False, encoding="utf-8-sig")
     grid_df.head(args.top_k).to_csv(top_path, index=False, encoding="utf-8-sig")
 
     if best_cache is None:
-        raise RuntimeError("No successful KMeans grid result.")
+        raise RuntimeError("No successful SVD + KMeans grid result.")
 
     best_row = best_cache["row"]
     with best_json_path.open("w", encoding="utf-8") as f:
@@ -443,9 +453,9 @@ def main():
         crosstab_path=crosstab_path,
     )
 
-    print("\n===== KMeans feature grid search done =====", flush=True)
+    print("\n===== SVD + KMeans grid search done =====", flush=True)
     print("Best result:", flush=True)
-    print(pd.DataFrame([best_row])[["acc", "nmi", "ari", "silhouette_cosine", "ngram_range", "min_df", "max_df", "max_features", "seed"]], flush=True)
+    print(pd.DataFrame([best_row])[["acc", "nmi", "ari", "silhouette_cosine", "svd_dim", "ngram_range", "min_df", "max_df", "max_features", "seed", "n_init"]], flush=True)
     print(f"grid csv      : {grid_path}", flush=True)
     print(f"top csv       : {top_path}", flush=True)
     print(f"best json     : {best_json_path}", flush=True)
