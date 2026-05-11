@@ -262,6 +262,13 @@ def plot_scatter_by_cluster(coords, clusters, title: str, output_path: Path):
 
 
 def plot_radar(metrics_df: pd.DataFrame, output_path: Path):
+    """
+    Plot radar chart with original metric values.
+
+    This version does NOT apply min-max normalization.
+    ACC, NMI and ARI are naturally in [0, 1].
+    Silhouette is also shown with its original value, although it is usually smaller.
+    """
     metric_cols = ["acc", "nmi", "ari", "silhouette_cosine"]
     metric_cols = [c for c in metric_cols if c in metrics_df.columns]
 
@@ -269,17 +276,7 @@ def plot_radar(metrics_df: pd.DataFrame, output_path: Path):
         print("[WARN] 雷达图至少需要 3 个指标，跳过。")
         return
 
-    values = metrics_df[metric_cols].astype(float).fillna(0).copy()
-
-    # Min-max normalization for display only.
-    norm_values = values.copy()
-    for col in metric_cols:
-        col_min = norm_values[col].min()
-        col_max = norm_values[col].max()
-        if abs(col_max - col_min) < 1e-12:
-            norm_values[col] = 1.0
-        else:
-            norm_values[col] = (norm_values[col] - col_min) / (col_max - col_min)
+    values = metrics_df[metric_cols].astype(float).fillna(0)
 
     angles = np.linspace(0, 2 * np.pi, len(metric_cols), endpoint=False).tolist()
     angles += angles[:1]
@@ -287,21 +284,28 @@ def plot_radar(metrics_df: pd.DataFrame, output_path: Path):
     plt.figure(figsize=(7, 7))
     ax = plt.subplot(111, polar=True)
 
-    for idx, row in norm_values.iterrows():
+    for idx, row in values.iterrows():
         model = metrics_df.loc[idx, "model"]
         row_values = row.tolist()
         row_values += row_values[:1]
+
         ax.plot(angles, row_values, linewidth=2, label=str(model))
-        ax.fill(angles, row_values, alpha=0.1)
+        ax.fill(angles, row_values, alpha=0.08)
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels([c.upper() for c in metric_cols])
-    ax.set_yticklabels([])
-    ax.set_title("不同聚类模型综合表现雷达图（归一化）")
-    ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.1))
+
+    # 原始指标大多在 0~1 之间，因此固定雷达图半径范围为 0~1
+    ax.set_ylim(0, 1.0)
+
+    # 设置径向刻度，便于读数
+    ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_yticklabels(["0.2", "0.4", "0.6", "0.8", "1.0"], fontsize=8)
+
+    ax.set_title("不同聚类模型综合表现雷达图", pad=20)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.35, 1.12))
 
     save_fig(output_path)
-
 
 def plot_minibatch_grid_heatmap(grid_df: pd.DataFrame, output_path: Path):
     required_cols = {"batch_size", "n_init", "max_iter", "acc"}
