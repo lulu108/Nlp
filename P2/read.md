@@ -114,3 +114,11 @@ python P2/03compare_cluster_models.py --input P2/data/news_for_cluster_800.csv -
 ```bash
 python P2/04plot_cluster_comparison.py --tag 800 --input P2/data/news_for_cluster_800.csv --metrics P2/data/cluster_model_comparison_800.csv --result P2/data/cluster_result_compare_800.csv --mbk-grid P2/data/minibatch_kmeans_grid_800.csv
 ```
+
+# 7) KMeans 特征参数搜索实验
+
+运行命令：
+
+```bash
+python P2/05grid_search_kmeans_features.py --input P2/data/news_for_cluster_800.csv --tag 800 --ngram-ranges "2-3,2-4,3-5" --min-dfs "1,2,3" --max-dfs "0.90,0.95" --max-features-list "30000,40000,60000" --seeds "42,52,66" --n-init 50 --top-k 20 --skip-silhouette true
+```
