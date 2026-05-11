@@ -89,11 +89,28 @@ python P2/02vectorize_cluster.py --input P2/data/news_for_cluster_600.csv --tag 
 
 # 5) 其他聚类模型对比实验
 
-为满足“用其他模型进行实验，并与 K-means 进行比较分析”的要求，
-本实验在相同的 TF-IDF 特征表示基础上加入 MiniBatchKMeans 和 Agglomerative Clustering。
+为满足实验要求中“用其他模型进行实验，并与 K-means 进行比较分析”的要求，本实验在 KMeans 主实验基础上进一步加入 MiniBatchKMeans 和 Agglomerative Clustering 两种聚类方法，形成三模型对比：
 
-运行命令：
+- KMeans：主实验模型，使用全量样本迭代更新聚类中心；
+- MiniBatchKMeans：KMeans 的小批量近似版本，适合更大规模文本聚类；
+- Agglomerative Clustering：层次聚类方法，用于比较不同聚类思想。
+
+当前主对比建议使用 800 条数据集，因为该组数据满足“不少于 500 条”的实验要求，且样本规模更适合观察模型差异。
+
+## 5.1 三模型对比实验运行命令
+
+推荐运行：
 
 ```bash
-python P2/03compare_cluster_models.py --input P2/data/news_for_cluster_800.csv --tag 800 --feature-mode char --max-df 0.95 --min-df 2 --ngram-min 2 --ngram-max 4 --max-features 40000 --sublinear-tf true --seed 42
+python P2/03compare_cluster_models.py --input P2/data/news_for_cluster_800.csv --tag 800 --feature-mode char --max-df 0.95 --min-df 2 --ngram-min 2 --ngram-max 4 --max-features 40000 --sublinear-tf true --seed 42 --mbk-batch-sizes 64,128,256,512,800 --mbk-n-inits 20,50 --mbk-max-iters 300,500 --svd-dim 100
+```
+
+# 6) 聚类模型对比结果可视化
+
+为便于实验报告展示，本项目提供 `04plot_cluster_comparison.py` 对三模型对比结果进行可视化。该脚本读取第 5 步生成的指标表、聚类结果表和 MiniBatchKMeans 参数搜索表，并输出多张可直接放入实验报告的图片。
+
+## 6.1 可视化脚本运行命令
+
+```bash
+python P2/04plot_cluster_comparison.py --tag 800 --input P2/data/news_for_cluster_800.csv --metrics P2/data/cluster_model_comparison_800.csv --result P2/data/cluster_result_compare_800.csv --mbk-grid P2/data/minibatch_kmeans_grid_800.csv
 ```
