@@ -1,0 +1,21 @@
+{
+  "rank_id": 5,
+  "tag": "800",
+  "feature_mode": "char",
+  "ngram_range": "(2, 3)",
+  "min_df": 1,
+  "max_df": 0.9,
+  "max_features": 40000,
+  "sublinear_tf": true,
+  "seed": 52,
+  "n_init": 50,
+  "n_samples": 800,
+  "n_clusters": 4,
+  "vocab_size": 40000,
+  "acc": 0.84875,
+  "nmi": 0.747305,
+  "ari": 0.675632,
+  "silhouette_cosine": NaN,
+  "elapsed_seconds": 7.1232,
+  "cluster_to_label_mapping": "{0: 0, 1: 1, 2: 2, 3: 3}"
+}
