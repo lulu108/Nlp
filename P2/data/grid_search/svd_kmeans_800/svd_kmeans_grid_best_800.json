@@ -18,7 +18,7 @@
   "nmi": 0.738928,
   "ari": 0.663727,
   "silhouette_cosine": 0.122168,
-  "elapsed_seconds": 6.0077,
+  "elapsed_seconds": 4.7833,
   "cluster_to_label_mapping": "{0: 1, 1: 3, 2: 0, 3: 2}",
   "representation": "TF-IDF + TruncatedSVD + Normalizer"
 }
