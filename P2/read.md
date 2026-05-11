@@ -1,4 +1,4 @@
-# 1) 嵌套采样，默认生成 4 类数据集（440 / 600 / 800）
+# 1) 嵌套采样，默认生成3类数据集（440 / 600 / 800）
 
 ```bash
 python P2/sample_thucnews_to_data500.py --seed 42
@@ -86,3 +86,14 @@ python P2/02vectorize_cluster.py --input P2/data/news_for_cluster_600.csv --tag 
 汇总结果：
 
 - `P2/data/cluster_metrics_summary.csv`
+
+# 5) 其他聚类模型对比实验
+
+为满足“用其他模型进行实验，并与 K-means 进行比较分析”的要求，
+本实验在相同的 TF-IDF 特征表示基础上加入 MiniBatchKMeans 和 Agglomerative Clustering。
+
+运行命令：
+
+```bash
+python P2/03compare_cluster_models.py --input P2/data/news_for_cluster_800.csv --tag 800 --feature-mode char --max-df 0.95 --min-df 2 --ngram-min 2 --ngram-max 4 --max-features 40000 --sublinear-tf true --seed 42
+```

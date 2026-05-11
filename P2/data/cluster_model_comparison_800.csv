@@ -1,0 +1,4 @@
+﻿model,n_clusters_pred,acc,nmi,ari,silhouette_cosine,cluster_to_label_mapping,tag,n_samples,feature_mode,vocab_size,max_df,min_df,ngram_range,max_features,sublinear_tf,model_params,representation
+KMeans,4,0.84375,0.735183,0.661012,0.049569,"{np.int32(0): np.int64(2), np.int32(1): np.int64(3), np.int32(2): np.int64(1), np.int32(3): np.int64(0)}",800,800,char,40000,0.95,2,"(2, 4)",40000,True,n_init=120,TF-IDF
+MiniBatchKMeans,4,0.4475,0.3444,0.11658,0.034509,"{np.int32(0): np.int64(2), np.int32(1): np.int64(0), np.int32(2): np.int64(3), np.int32(3): np.int64(1)}",800,800,char,40000,0.95,2,"(2, 4)",40000,True,"batch_size=128, n_init=100, max_iter=500",TF-IDF
+AgglomerativeClustering,4,0.84,0.729674,0.643204,0.147005,"{np.int64(0): np.int64(3), np.int64(1): np.int64(2), np.int64(2): np.int64(0), np.int64(3): np.int64(1)}",800,800,char,40000,0.95,2,"(2, 4)",40000,True,"linkage=ward, svd_dim=100",TF-IDF + TruncatedSVD + Normalizer

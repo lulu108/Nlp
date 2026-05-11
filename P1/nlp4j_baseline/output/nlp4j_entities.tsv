@@ -2,3 +2,11 @@ sentence_id	entity_type	entity_text
 1	PER	张三
 1	LOC	北京
 1	ORG	清华大学
+2	LOC	李华
+2	ORG	中国石油大学
+2	ORG	腾讯公司
+3	LOC	山东省青岛市
+4	PER	王伟
+4	ORG	上海交通大学
+5	ORG	华为公司
+5	LOC	深圳
