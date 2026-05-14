@@ -33,6 +33,7 @@ P3/
 ├── 03_train_linear_svm.py               # 单独训练 Linear SVM 的实验脚本
 ├── 04_train_classical_models.py         # 多模型对比实验主脚本
 ├── 05_train_multilabel.py               # 阶段5：多标签文本分类扩展实验
+├── 06_visualize_results.py              # 阶段6：实验结果可视化
 ├── extract_thucnews_4class.py           # 数据整理脚本
 ├── read.md                              # 实验运行说明
 └── data/
@@ -52,7 +53,8 @@ P3/
     ├── thucnews_4class_200_stage1_report.txt
     ├── thucnews_4class_200_stage2_report.txt
     ├── classical_model_outputs/         # 多模型实验输出结果
-    └── multilabel_outputs/              # 多标签扩展实验输出结果
+    ├── multilabel_outputs/              # 多标签扩展实验输出结果
+    └── visualization_outputs/           # 实验结果可视化图片
 ```
 
 ---
@@ -269,7 +271,41 @@ P3/data/multilabel_outputs/multilabel_tfidf_vectorizer.joblib
 
 ---
 
-## 9. 实验结果说明
+## 9. 阶段6：实验结果可视化
+
+本阶段用于生成实验三报告所需的核心可视化图片。脚本不重新训练模型，只读取已有实验数据和结果文件。
+
+运行命令：
+
+```bash
+python P3/06_visualize_results.py
+```
+
+输出目录：
+
+```text
+P3/data/visualization_outputs/
+```
+
+主要输出图片包括：
+
+```text
+P3/data/visualization_outputs/class_distribution.png
+P3/data/visualization_outputs/model_comparison.png
+P3/data/visualization_outputs/svm_confusion_matrix.png
+P3/data/visualization_outputs/multilabel_label_f1.png
+```
+
+其中：
+
+- `class_distribution.png` 用于展示四类文本样本数量分布；
+- `model_comparison.png` 用于对比 NB、LR、SVM 在测试集上的 Accuracy 和 Macro-F1；
+- `svm_confusion_matrix.png` 用于展示 SVM 测试集混淆矩阵；
+- `multilabel_label_f1.png` 用于展示多标签分类中各标签的 F1-score。
+
+---
+
+## 10. 实验结果说明
 
 多模型对比实验的最终结果保存在：
 
@@ -299,7 +335,7 @@ P3/data/classical_model_outputs/dev_search_details.csv
 
 ---
 
-## 10. 推荐运行顺序
+## 11. 推荐运行顺序
 
 完整实验推荐按以下顺序运行：
 
@@ -313,6 +349,8 @@ python P3/02_preprocess_split.py --input-csv P3/data/thucnews_4class_200_clean.c
 python P3/04_train_classical_models.py
 
 python P3/05_train_multilabel.py
+
+python P3/06_visualize_results.py
 ```
 
 如果只想单独查看 Linear SVM 模型效果，可以额外运行：
@@ -323,11 +361,11 @@ python P3/03_train_linear_svm.py
 
 ---
 
-## 11. 实验报告撰写建议
+## 12. 实验报告撰写建议
 
 实验报告中可以重点引用以下内容：
 
-### 11.1 数据规模与类别分布
+### 12.1 数据规模与类别分布
 
 来自：
 
@@ -343,7 +381,7 @@ P3/data/thucnews_4class_200_stage1_report.txt
 - 标签映射情况
 - 空值和重复文本检查结果
 
-### 11.2 数据划分、分词和 TF-IDF 特征维度
+### 12.2 数据划分、分词和 TF-IDF 特征维度
 
 来自：
 
@@ -358,7 +396,7 @@ P3/data/thucnews_4class_200_stage2_report.txt
 - 分词和停用词过滤情况
 - TF-IDF 特征维度
 
-### 11.3 多模型实验结果
+### 12.3 多模型实验结果
 
 来自：
 
@@ -373,7 +411,7 @@ P3/data/classical_model_outputs/classical_models_summary.csv
 - 不同模型的 Accuracy、Macro-F1、Weighted-F1
 - 最优模型及其原因
 
-### 11.4 可视化结果
+### 12.4 可视化结果
 
 可以使用：
 
@@ -393,7 +431,7 @@ P3/data/classical_model_outputs/lr_test_confusion_matrix.png
 
 ---
 
-## 12. 注意事项
+## 13. 注意事项
 
 1. 本实验数据应表述为本人自行收集并整理的中文新闻文本数据。
 2. 本实验是体育、科技、财经、教育四类文本分类任务。
