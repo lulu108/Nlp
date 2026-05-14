@@ -99,16 +99,39 @@ def preprocess_text(text: object, stopwords: set[str]) -> str:
 
 def labels_to_string(label_values: pd.Series | list[int]) -> str:
     """将 0/1 标签列转换为分号分隔的中文标签字符串。"""
-    return ";".join(
+    result = ";".join(
         label_name
         for label_name, value in zip(LABEL_COLUMNS, label_values)
         if int(value) == 1
     )
+    return result if result else "无"
+
+
+def build_data_stats(
+    df: pd.DataFrame,
+    y: pd.DataFrame,
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+) -> dict:
+    """汇总数据集规模与标签分布信息。"""
+    label_count_per_sample = y.sum(axis=1)
+    return {
+        "total_samples": len(df),
+        "train_samples": len(train_df),
+        "test_samples": len(test_df),
+        "label_counts": y.sum(axis=0).astype(int).to_dict(),
+        "single_label_samples": int((label_count_per_sample == 1).sum()),
+        "double_label_samples": int((label_count_per_sample == 2).sum()),
+        "triple_label_samples": int((label_count_per_sample == 3).sum()),
+        "quad_label_samples": int((label_count_per_sample == 4).sum()),
+        "avg_labels_per_sample": float(label_count_per_sample.mean()),
+    }
 
 
 def save_report(
     report_path: Path,
     metrics: dict[str, float],
+    data_stats: dict,
     cls_report: str,
     input_csv: Path,
     stopwords_path: Path,
@@ -119,6 +142,23 @@ def save_report(
         "",
         f"输入数据: {input_csv}",
         f"停用词表: {stopwords_path if stopwords_path.exists() else '未提供，使用空停用词表'}",
+        "",
+        "数据统计信息:",
+        "任务类型: 多标签文本分类",
+        f"样本总数: {data_stats['total_samples']}",
+        f"训练集样本数: {data_stats['train_samples']}",
+        f"测试集样本数: {data_stats['test_samples']}",
+        f"标签集合: {', '.join(LABEL_COLUMNS)}",
+        "各标签出现次数:",
+        *[
+            f"{label}: {data_stats['label_counts'][label]}"
+            for label in LABEL_COLUMNS
+        ],
+        f"单标签样本数: {data_stats['single_label_samples']}",
+        f"双标签样本数: {data_stats['double_label_samples']}",
+        f"三标签样本数: {data_stats['triple_label_samples']}",
+        f"四标签样本数: {data_stats['quad_label_samples']}",
+        f"平均每条样本标签数: {data_stats['avg_labels_per_sample']:.4f}",
         "",
         "评估指标:",
         f"micro_f1: {metrics['micro_f1']:.4f}",
@@ -175,11 +215,16 @@ def main() -> None:
     )
 
     # 只在训练集上拟合 TF-IDF，再用于测试集转换，避免数据泄漏。
-    vectorizer = TfidfVectorizer()
+    vectorizer = TfidfVectorizer(
+        max_features=5000,
+        min_df=1,
+        max_df=0.95,
+        token_pattern=r"(?u)\b\w+\b",
+    )
     X_train = vectorizer.fit_transform(train_df["text_processed"])
     X_test = vectorizer.transform(test_df["text_processed"])
 
-    classifier = OneVsRestClassifier(LogisticRegression(max_iter=2000))
+    classifier = OneVsRestClassifier(LogisticRegression(max_iter=2000, solver="liblinear"))
     classifier.fit(X_train, y_train)
 
     y_pred = classifier.predict(X_test)
@@ -200,10 +245,12 @@ def main() -> None:
         digits=4,
         zero_division=0,
     )
+    data_stats = build_data_stats(df, y, train_df, test_df)
 
     save_report(
         report_path=report_path,
         metrics=metrics,
+        data_stats=data_stats,
         cls_report=cls_report,
         input_csv=input_csv,
         stopwords_path=stopwords_path,
@@ -212,6 +259,7 @@ def main() -> None:
     predictions_df = pd.DataFrame(
         {
             "text": test_df["text"],
+            "text_processed": test_df["text_processed"],
             "真实_labels": test_df["labels"],
             "预测_labels": y_pred_df.apply(labels_to_string, axis=1),
         },

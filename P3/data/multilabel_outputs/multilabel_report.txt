@@ -3,23 +3,40 @@
 输入数据: D:\Project\project_nlp\Nlp\P3\data\multilabel_news_200.csv
 停用词表: D:\Project\project_nlp\Nlp\P3\data\stopwords.txt
 
+数据统计信息:
+任务类型: 多标签文本分类
+样本总数: 200
+训练集样本数: 160
+测试集样本数: 40
+标签集合: 体育, 科技, 财经, 教育
+各标签出现次数:
+体育: 112
+科技: 113
+财经: 112
+教育: 113
+单标签样本数: 40
+双标签样本数: 90
+三标签样本数: 50
+四标签样本数: 20
+平均每条样本标签数: 2.2500
+
 评估指标:
 micro_f1: 0.8252
 macro_f1: 0.8238
-weighted_f1: 0.8310
+weighted_f1: 0.8317
 hamming_loss: 0.2250
-subset_accuracy: 0.3000
+subset_accuracy: 0.3250
 
 classification_report:
               precision    recall  f1-score   support
 
           体育     0.8276    0.9231    0.8727        26
-          科技     0.6000    1.0000    0.7500        18
+          科技     0.5806    1.0000    0.7347        18
           财经     0.8800    0.8800    0.8800        25
-          教育     0.6774    0.9545    0.7925        22
+          教育     0.7000    0.9545    0.8077        22
 
    micro avg     0.7391    0.9341    0.8252        91
-   macro avg     0.7463    0.9394    0.8238        91
-weighted avg     0.7607    0.9341    0.8310        91
- samples avg     0.7458    0.9354    0.8088        91
+   macro avg     0.7471    0.9394    0.8238        91
+weighted avg     0.7623    0.9341    0.8317        91
+ samples avg     0.7500    0.9354    0.8096        91
 
