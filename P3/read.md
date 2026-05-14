@@ -32,6 +32,7 @@ P3/
 ├── 02_preprocess_split.py               # 阶段2：分词、三划分与 TF-IDF 特征构建
 ├── 03_train_linear_svm.py               # 单独训练 Linear SVM 的实验脚本
 ├── 04_train_classical_models.py         # 多模型对比实验主脚本
+├── 05_train_multilabel.py               # 阶段5：多标签文本分类扩展实验
 ├── extract_thucnews_4class.py           # 数据整理脚本
 ├── read.md                              # 实验运行说明
 └── data/
@@ -47,9 +48,11 @@ P3/
     ├── y_dev.npy                        # 开发集标签
     ├── y_test.npy                       # 测试集标签
     ├── tfidf_vectorizer.joblib          # TF-IDF 向量器
+    ├── multilabel_news_200.csv          # 多标签扩展实验数据
     ├── thucnews_4class_200_stage1_report.txt
     ├── thucnews_4class_200_stage2_report.txt
-    └── classical_model_outputs/         # 多模型实验输出结果
+    ├── classical_model_outputs/         # 多模型实验输出结果
+    └── multilabel_outputs/              # 多标签扩展实验输出结果
 ```
 
 ---
@@ -233,7 +236,40 @@ P3/data/classical_model_outputs/svm_classification_report.txt
 
 ---
 
-## 8. 实验结果说明
+## 8. 阶段5：多标签文本分类扩展实验
+
+本阶段用于补充验证严格意义上的多标签分类任务。数据文件为：
+
+```text
+P3/data/multilabel_news_200.csv
+```
+
+每条文本可同时对应体育、科技、财经、教育中的一个或多个标签，标签采用 multi-hot 形式表示。
+
+运行命令：
+
+```bash
+python P3/05_train_multilabel.py
+```
+
+输出目录：
+
+```text
+P3/data/multilabel_outputs/
+```
+
+主要输出文件包括：
+
+```text
+P3/data/multilabel_outputs/multilabel_report.txt
+P3/data/multilabel_outputs/multilabel_predictions.csv
+P3/data/multilabel_outputs/multilabel_model.joblib
+P3/data/multilabel_outputs/multilabel_tfidf_vectorizer.joblib
+```
+
+---
+
+## 9. 实验结果说明
 
 多模型对比实验的最终结果保存在：
 
@@ -263,7 +299,7 @@ P3/data/classical_model_outputs/dev_search_details.csv
 
 ---
 
-## 9. 推荐运行顺序
+## 10. 推荐运行顺序
 
 完整实验推荐按以下顺序运行：
 
@@ -275,6 +311,8 @@ python P3/01process.py --input-csv P3/data/thucnews_4class_200.csv --output-csv 
 python P3/02_preprocess_split.py --input-csv P3/data/thucnews_4class_200_clean.csv --output-dir P3/data --report P3/data/thucnews_4class_200_stage2_report.txt
 
 python P3/04_train_classical_models.py
+
+python P3/05_train_multilabel.py
 ```
 
 如果只想单独查看 Linear SVM 模型效果，可以额外运行：
@@ -285,11 +323,11 @@ python P3/03_train_linear_svm.py
 
 ---
 
-## 10. 实验报告撰写建议
+## 11. 实验报告撰写建议
 
 实验报告中可以重点引用以下内容：
 
-### 10.1 数据规模与类别分布
+### 11.1 数据规模与类别分布
 
 来自：
 
@@ -305,7 +343,7 @@ P3/data/thucnews_4class_200_stage1_report.txt
 - 标签映射情况
 - 空值和重复文本检查结果
 
-### 10.2 数据划分、分词和 TF-IDF 特征维度
+### 11.2 数据划分、分词和 TF-IDF 特征维度
 
 来自：
 
@@ -320,7 +358,7 @@ P3/data/thucnews_4class_200_stage2_report.txt
 - 分词和停用词过滤情况
 - TF-IDF 特征维度
 
-### 10.3 多模型实验结果
+### 11.3 多模型实验结果
 
 来自：
 
@@ -335,7 +373,7 @@ P3/data/classical_model_outputs/classical_models_summary.csv
 - 不同模型的 Accuracy、Macro-F1、Weighted-F1
 - 最优模型及其原因
 
-### 10.4 可视化结果
+### 11.4 可视化结果
 
 可以使用：
 
@@ -355,12 +393,11 @@ P3/data/classical_model_outputs/lr_test_confusion_matrix.png
 
 ---
 
-## 11. 注意事项
+## 12. 注意事项
 
 1. 本实验数据应表述为本人自行收集并整理的中文新闻文本数据。
 2. 本实验是体育、科技、财经、教育四类文本分类任务。
-3. 每条文本只对应一个主类别标签，因此属于多类别单标签文本分类任务。
+3. 主实验为多类别单标签分类；扩展实验为严格意义上的多标签文本分类。
 4. 训练过程中使用开发集选择参数，测试集只用于最终评估。
 5. TF-IDF 向量器只在训练集上拟合，避免测试集信息泄漏。
 6. 实验报告中不要将测试集用于参数选择，测试集只用于最终模型评估。
-7. 如果需要说明“多标签分类”要求，可以表述为：本实验围绕多个类别标签开展分类实验，但由于每条文本只对应一个主类别，因此任务形式为多类别单标签文本分类。
