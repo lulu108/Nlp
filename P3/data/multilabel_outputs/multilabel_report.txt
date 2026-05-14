@@ -1,0 +1,25 @@
+﻿中文多标签文本分类实验报告
+
+输入数据: D:\Project\project_nlp\Nlp\P3\data\multilabel_news_200.csv
+停用词表: D:\Project\project_nlp\Nlp\P3\data\stopwords.txt
+
+评估指标:
+micro_f1: 0.8252
+macro_f1: 0.8238
+weighted_f1: 0.8310
+hamming_loss: 0.2250
+subset_accuracy: 0.3000
+
+classification_report:
+              precision    recall  f1-score   support
+
+          体育     0.8276    0.9231    0.8727        26
+          科技     0.6000    1.0000    0.7500        18
+          财经     0.8800    0.8800    0.8800        25
+          教育     0.6774    0.9545    0.7925        22
+
+   micro avg     0.7391    0.9341    0.8252        91
+   macro avg     0.7463    0.9394    0.8238        91
+weighted avg     0.7607    0.9341    0.8310        91
+ samples avg     0.7458    0.9354    0.8088        91
+
