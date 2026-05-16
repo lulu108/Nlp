@@ -22,7 +22,7 @@ const points = ref([]);
 const hasSubmitted = ref(false);
 const copyMessage = ref("");
 const clusterCost = ref(null);
-const activeClusterResultTab = ref("overview");
+const activeClusterResultTab = ref("scatter");
 
 function parseLinesToDocuments(text) {
   return text
@@ -478,137 +478,151 @@ async function handleCluster() {
         完成聚类后，系统会同时展示散点图、文档条数和各簇文档摘要。
       </div>
 
-      <div class="result-layout">
-        <ClusterChart :points="points" :loading="loading" />
-
-        <aside class="summary-card cluster-result-card">
-          <div class="summary-head cluster-result-head">
-            <div>
-              <h3>聚类解释</h3>
-              <p>通过概览、统计图和簇详情解释左侧散点图结果。</p>
-            </div>
-            <span class="meta-pill">{{ hasResults ? `${points.length} 个点` : "等待结果" }}</span>
+      <div class="cluster-result-tabs-card">
+        <div class="cluster-result-card-head">
+          <div>
+            <h3>聚类结果</h3>
+            <p>在同一卡片中切换查看散点图、概览、簇统计和簇详情，避免结果区横向拥挤。</p>
           </div>
+          <span class="meta-pill">{{ hasResults ? points.length + " 个点" : "等待结果" }}</span>
+        </div>
 
-          <div class="cluster-result-tabs" role="tablist" aria-label="聚类解释">
-            <button
-              class="cluster-result-tab"
-              :class="{ active: activeClusterResultTab === 'overview' }"
-              type="button"
-              role="tab"
-              :aria-selected="activeClusterResultTab === 'overview'"
-              @click="activeClusterResultTab = 'overview'"
-            >
-              结果概览
-            </button>
-            <button
-              class="cluster-result-tab"
-              :class="{ active: activeClusterResultTab === 'stats' }"
-              type="button"
-              role="tab"
-              :aria-selected="activeClusterResultTab === 'stats'"
-              @click="activeClusterResultTab = 'stats'"
-            >
-              簇统计
-            </button>
-            <button
-              class="cluster-result-tab"
-              :class="{ active: activeClusterResultTab === 'detail' }"
-              type="button"
-              role="tab"
-              :aria-selected="activeClusterResultTab === 'detail'"
-              @click="activeClusterResultTab = 'detail'"
-            >
-              簇详情
-            </button>
-          </div>
-
-          <div
-            v-if="activeClusterResultTab === 'overview'"
-            class="cluster-result-panel"
-            role="tabpanel"
+        <div class="cluster-result-tabs" role="tablist" aria-label="聚类结果">
+          <button
+            class="cluster-result-tab"
+            :class="{ active: activeClusterResultTab === 'scatter' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeClusterResultTab === 'scatter'"
+            @click="activeClusterResultTab = 'scatter'"
           >
-            <div class="summary-stats">
-              <article class="overview-item">
-                <span>返回文档</span>
-                <strong>{{ points.length }}</strong>
-              </article>
-              <article class="overview-item">
-                <span>识别簇数</span>
-                <strong>{{ clusterGroups.length }}</strong>
-              </article>
-              <article class="overview-item">
-                <span>聚类耗时</span>
-                <strong>{{ formatCost(clusterCost) }}</strong>
-              </article>
-            </div>
-
-            <div class="summary-actions cluster-overview-actions">
-              <button
-                class="summary-copy-btn"
-                type="button"
-                :disabled="loading || !hasResults"
-                @click="copyClusterSummary"
-              >
-                复制聚类摘要
-              </button>
-              <button
-                class="summary-copy-btn"
-                type="button"
-                :disabled="loading || !hasResults"
-                @click="copyClusterReportDescription"
-              >
-                复制报告描述
-              </button>
-            </div>
-
-            <p v-if="!hasResults" class="summary-empty">
-              聚类完成后，这里会展示文档数量、簇数量、耗时和可复制的报告文本。
-            </p>
-            <p v-else class="summary-empty">
-              当前聚类结果已生成，可切换到“簇统计”查看数量分布，或切换到“簇详情”查看每个簇包含的文档标题。
-            </p>
-            <p v-if="hasResults && copyMessage" class="summary-copy-feedback">
-              {{ copyMessage }}
-            </p>
-          </div>
-
-          <div
-            v-else-if="activeClusterResultTab === 'stats'"
-            class="cluster-result-panel"
-            role="tabpanel"
+            聚类散点图
+          </button>
+          <button
+            class="cluster-result-tab"
+            :class="{ active: activeClusterResultTab === 'overview' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeClusterResultTab === 'overview'"
+            @click="activeClusterResultTab = 'overview'"
           >
-            <ClusterStatsChart :groups="clusterGroups" :loading="loading" />
+            结果概览
+          </button>
+          <button
+            class="cluster-result-tab"
+            :class="{ active: activeClusterResultTab === 'stats' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeClusterResultTab === 'stats'"
+            @click="activeClusterResultTab = 'stats'"
+          >
+            簇统计
+          </button>
+          <button
+            class="cluster-result-tab"
+            :class="{ active: activeClusterResultTab === 'detail' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeClusterResultTab === 'detail'"
+            @click="activeClusterResultTab = 'detail'"
+          >
+            簇详情
+          </button>
+        </div>
+
+        <div
+          v-if="activeClusterResultTab === 'scatter'"
+          class="cluster-result-panel"
+          role="tabpanel"
+        >
+          <ClusterChart :points="points" :loading="loading" />
+        </div>
+
+        <div
+          v-else-if="activeClusterResultTab === 'overview'"
+          class="cluster-result-panel"
+          role="tabpanel"
+        >
+          <div class="summary-stats">
+            <article class="overview-item">
+              <span>返回文档</span>
+              <strong>{{ points.length }}</strong>
+            </article>
+            <article class="overview-item">
+              <span>识别簇数</span>
+              <strong>{{ clusterGroups.length }}</strong>
+            </article>
+            <article class="overview-item">
+              <span>聚类耗时</span>
+              <strong>{{ formatCost(clusterCost) }}</strong>
+            </article>
           </div>
 
-          <div v-else class="cluster-result-panel" role="tabpanel">
-            <p v-if="!hasResults" class="summary-empty">
-              聚类完成后，这里会列出每个簇包含的文档标题。
-            </p>
-            <div v-else class="cluster-group-list">
-              <article
-                v-for="group in clusterGroups"
-                :key="group.cluster"
-                class="cluster-group-card"
-              >
-                <div class="cluster-group-head">
-                  <div class="cluster-badge">
-                    <span
-                      class="cluster-dot"
-                      :style="{ backgroundColor: group.color }"
-                    />
-                    <strong>簇 {{ group.cluster }}</strong>
-                  </div>
-                  <span>{{ group.count }} 篇文档</span>
+          <div class="summary-actions cluster-overview-actions">
+            <button
+              class="summary-copy-btn"
+              type="button"
+              :disabled="loading || !hasResults"
+              @click="copyClusterSummary"
+            >
+              复制聚类摘要
+            </button>
+            <button
+              class="summary-copy-btn"
+              type="button"
+              :disabled="loading || !hasResults"
+              @click="copyClusterReportDescription"
+            >
+              复制报告描述
+            </button>
+          </div>
+
+          <p v-if="!hasResults" class="summary-empty">
+            聚类完成后，这里会汇总返回文档数、识别簇数、耗时和可复制的报告文字。
+          </p>
+          <p v-else class="summary-empty">
+            当前聚类结果已生成，可切换到散点图查看二维分布，或进入簇详情检查每个簇包含的文档标题。
+          </p>
+          <p v-if="hasResults && copyMessage" class="summary-copy-feedback">
+            {{ copyMessage }}
+          </p>
+        </div>
+
+        <div
+          v-else-if="activeClusterResultTab === 'stats'"
+          class="cluster-result-panel"
+          role="tabpanel"
+        >
+          <ClusterStatsChart :groups="clusterGroups" :loading="loading" />
+        </div>
+
+        <div v-else class="cluster-result-panel" role="tabpanel">
+          <p v-if="!hasResults" class="summary-empty">
+            聚类完成后，这里会列出每个簇包含的文档标题。
+          </p>
+          <div v-else class="cluster-group-list">
+            <article
+              v-for="group in clusterGroups"
+              :key="group.cluster"
+              class="cluster-group-card"
+            >
+              <div class="cluster-group-head">
+                <div class="cluster-badge">
+                  <span
+                    class="cluster-dot"
+                    :style="{ backgroundColor: group.color }"
+                  />
+                  <strong>簇 {{ group.cluster }}</strong>
                 </div>
+                <span>{{ group.count }} 篇文档</span>
+              </div>
 
-                <ul class="cluster-title-list">
-                  <li v-for="title in group.titles" :key="title">{{ title }}</li>
-                </ul>
-              </article>
-            </div>
+              <ul class="cluster-title-list">
+                <li v-for="title in group.titles" :key="title">{{ title }}</li>
+              </ul>
+            </article>
           </div>
-        </aside>
+        </div>
       </div>
     </section>
   </section>
@@ -689,8 +703,7 @@ async function handleCluster() {
   align-items: flex-start;
 }
 
-.section-head h3,
-.summary-head h3 {
+.section-head h3 {
   margin: 0;
   font-size: 1.1rem;
   color: var(--color-text-strong);
@@ -906,14 +919,7 @@ async function handleCluster() {
   border: 1px solid #f7c3c3;
 }
 
-.result-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-.summary-card {
+.cluster-result-tabs-card {
   display: grid;
   gap: var(--space-4);
   padding: var(--space-4);
@@ -922,31 +928,30 @@ async function handleCluster() {
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
 }
 
-.cluster-result-card {
-  align-self: stretch;
-}
-
-.summary-head {
+.cluster-result-card-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.cluster-result-head {
+  gap: var(--space-4);
   align-items: flex-start;
 }
 
-.cluster-result-head p {
+.cluster-result-card-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--color-text-strong);
+}
+
+.cluster-result-card-head p {
   margin: var(--space-2) 0 0;
   color: var(--color-text-muted);
   line-height: 1.6;
 }
 
 .cluster-result-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: inline-flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
+  width: fit-content;
   padding: 0.3rem;
   border: 1px solid var(--color-border-soft);
   border-radius: 999px;
@@ -1101,7 +1106,6 @@ async function handleCluster() {
 @media (max-width: 960px) {
   .page-hero,
   .form-grid,
-  .result-layout,
   .summary-stats {
     grid-template-columns: 1fr;
   }
@@ -1109,18 +1113,22 @@ async function handleCluster() {
 
 @media (max-width: 640px) {
   .workspace-card,
-  .summary-card {
+  .cluster-result-tabs-card {
     padding: var(--space-4);
   }
 
   .section-head,
-  .summary-head {
+  .cluster-result-card-head {
     flex-direction: column;
   }
 
   .cluster-result-tabs {
-    grid-template-columns: 1fr;
+    width: 100%;
     border-radius: var(--radius-lg);
+  }
+
+  .cluster-result-tab {
+    flex: 1 1 auto;
   }
 
   .summary-actions,
