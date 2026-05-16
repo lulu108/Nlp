@@ -10,6 +10,7 @@ import {
 import TokenResultCard from "../components/TokenResultCard.vue";
 import NerResultCard from "../components/NerResultCard.vue";
 import ClassifyResultCard from "../components/ClassifyResultCard.vue";
+import TextStatsCharts from "../components/TextStatsCharts.vue";
 
 const TEXT_EXAMPLES = [
   {
@@ -384,6 +385,13 @@ onMounted(() => {
         输入文本后可以在下方同时查看分词、实体识别和文本分类结果。
       </div>
     </section>
+
+    <TextStatsCharts
+      :tokens="tokens"
+      :entities="entities"
+      :loading="loading"
+      :ready="hasSubmitted"
+    />
 
     <section class="result-grid">
       <TokenResultCard :tokens="tokens" :loading="loading" :ready="hasSubmitted" />
