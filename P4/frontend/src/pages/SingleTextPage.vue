@@ -12,6 +12,17 @@ import NerResultCard from "../components/NerResultCard.vue";
 import ClassifyResultCard from "../components/ClassifyResultCard.vue";
 import TextStatsCharts from "../components/TextStatsCharts.vue";
 
+const ENTITY_LABEL_NAMES = {
+  PER: "人名",
+  LOC: "地点",
+  GPE: "行政地域",
+  FAC: "设施/景点",
+  ORG: "机构",
+  COMPANY: "公司",
+  INSTITUTION: "单位",
+  MISC: "其他实体",
+};
+
 const TEXT_EXAMPLES = [
   {
     key: "tech",
@@ -44,6 +55,7 @@ const label = ref("");
 const confidence = ref(null);
 const hasSubmitted = ref(false);
 const activeResultTab = ref("overview");
+const analysisCost = ref(null);
 const copyMessage = ref("");
 const backendStatus = ref({
   online: false,
@@ -79,6 +91,7 @@ function resetResults() {
   entities.value = [];
   label.value = "";
   confidence.value = null;
+  analysisCost.value = null;
 }
 
 function fillExample(exampleText) {
@@ -108,6 +121,13 @@ function formatConfidence(value) {
   return `${(numericValue * 100).toFixed(2)}%`;
 }
 
+function formatCost(value) {
+  if (value === null || value === undefined) {
+    return "未记录";
+  }
+  return `${Math.round(Number(value))} ms`;
+}
+
 function buildAnalysisSummary() {
   const tokenText = tokens.value.length > 0 ? tokens.value.join(" / ") : "无";
   const entityText =
@@ -133,6 +153,46 @@ function buildAnalysisSummary() {
     `分类标签：${label.value || "无"}`,
     `置信度：${formatConfidence(confidence.value)}`,
   ].join("\n");
+}
+
+function buildAnalysisReportDescription() {
+  const confidenceText = formatConfidence(confidence.value);
+  const labelText = label.value || "未返回";
+  const entityList = entities.value
+    .map((item) => {
+      const entityLabel = String(item?.label || "MISC").toUpperCase();
+      const entityName = ENTITY_LABEL_NAMES[entityLabel] || entityLabel;
+      return `${entityName}“${item.text}”`;
+    })
+    .filter(Boolean);
+
+  const entityDescription =
+    entityList.length > 0
+      ? `从实体识别结果看，文本中包含${entityList.slice(0, 4).join("、")}${
+          entityList.length > 4 ? "等实体" : ""
+        }，说明该文本具有较明确的命名实体线索。`
+      : "从实体识别结果看，文本中未识别出明确的命名实体，说明该文本可能更偏向普通叙述或实体信息较少。";
+
+  return `本次输入文本共 ${charCount.value} 个字符，系统分词得到 ${tokenCount.value} 个词元，识别出 ${entityCount.value} 个命名实体，文本分类结果为“${labelText}”，置信度为 ${confidenceText}。本次分析耗时约 ${formatCost(
+    analysisCost.value,
+  )}。${entityDescription}`;
+}
+
+async function writeTextToClipboard(textValue) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(textValue);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = textValue;
+  textarea.setAttribute("readonly", "readonly");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
 }
 
 async function copyAnalysisResult() {
@@ -164,6 +224,20 @@ async function copyAnalysisResult() {
   }
 }
 
+async function copyAnalysisReportDescription() {
+  if (!hasResults.value) {
+    copyMessage.value = "当前没有可复制的报告描述。";
+    return;
+  }
+
+  try {
+    await writeTextToClipboard(buildAnalysisReportDescription());
+    copyMessage.value = "报告描述已复制到剪贴板。";
+  } catch {
+    copyMessage.value = "复制失败，请稍后重试。";
+  }
+}
+
 async function handleAnalyze() {
   const input = trimmedText.value;
 
@@ -180,6 +254,7 @@ async function handleAnalyze() {
   hasSubmitted.value = true;
   copyMessage.value = "";
   resetResults();
+  const startTime = performance.now();
 
   try {
     const [tokenizeRes, nerRes, classifyRes] = await Promise.all([
@@ -195,6 +270,7 @@ async function handleAnalyze() {
   } catch (e) {
     error.value = e instanceof Error ? e.message : "分析失败，请稍后重试。";
   } finally {
+    analysisCost.value = performance.now() - startTime;
     loading.value = false;
   }
 }
@@ -284,7 +360,7 @@ onMounted(() => {
     </section>
 
 
-    <section class="workspace-card">
+    <section class="workspace-card input-card">
       <div class="section-head">
         <div>
           <h3>输入文本</h3>
@@ -296,12 +372,13 @@ onMounted(() => {
       <textarea
         v-model="text"
         class="editor-textarea"
-        rows="7"
+        rows="5"
         placeholder="例如：小明在北京大学学习自然语言处理，并计划下周去北京参加人工智能学术活动。"
       />
 
-      <div class="example-row">
+      <div class="example-toolbar">
         <span class="example-label">快速示例</span>
+        <div class="example-row">
         <button
           v-for="example in TEXT_EXAMPLES"
           :key="example.key"
@@ -312,6 +389,7 @@ onMounted(() => {
         >
           {{ example.label }}
         </button>
+        </div>
       </div>
 
       <div class="action-row">
@@ -319,13 +397,20 @@ onMounted(() => {
           {{ loading ? "分析中..." : "开始分析" }}
         </button>
         <button
-          class="secondary-btn"
+          class="ghost-btn soft-action-btn"
           :disabled="loading || !hasResults"
           @click="copyAnalysisResult"
         >
           复制分析结果
         </button>
-        <button class="ghost-btn" :disabled="loading" @click="clearAll">清空内容</button>
+        <button
+          class="ghost-btn soft-action-btn"
+          :disabled="loading || !hasResults"
+          @click="copyAnalysisReportDescription"
+        >
+          复制报告描述
+        </button>
+        <button class="ghost-btn soft-action-btn" :disabled="loading" @click="clearAll">清空内容</button>
       </div>
 
       <p v-if="copyMessage" class="copy-feedback">{{ copyMessage }}</p>
@@ -338,7 +423,16 @@ onMounted(() => {
           <p>将概览、可视化和详细结果集中在同一卡片中，便于演示和截图。</p>
         </div>
 
-        <div class="result-tab-list" role="tablist" aria-label="分析结果">
+        <div class="result-head-actions">
+          <div class="result-quick-stats" aria-label="分析结果概要">
+            <span>词数 <strong>{{ tokenCount }}</strong></span>
+            <span>实体 <strong>{{ entityCount }}</strong></span>
+            <span>分类 <strong>{{ label || "待返回" }}</strong></span>
+            <span>状态 <strong>{{ analysisStateText }}</strong></span>
+            <span>耗时 <strong>{{ formatCost(analysisCost) }}</strong></span>
+          </div>
+
+          <div class="result-tab-list" role="tablist" aria-label="分析结果">
           <button
             class="result-tab-btn"
             :class="{ active: activeResultTab === 'overview' }"
@@ -370,6 +464,8 @@ onMounted(() => {
             结果详情
           </button>
         </div>
+      </div>
+
       </div>
 
       <div v-if="activeResultTab === 'overview'" class="result-tab-panel" role="tabpanel">
@@ -509,6 +605,10 @@ onMounted(() => {
   box-shadow: var(--shadow-soft);
 }
 
+.input-card {
+  gap: var(--space-3);
+}
+
 .backend-status-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -569,6 +669,42 @@ onMounted(() => {
   justify-content: space-between;
   gap: var(--space-4);
   align-items: flex-start;
+}
+
+.result-head-actions {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: end;
+}
+
+.result-quick-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.result-quick-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 30px;
+  padding: 0.32rem 0.65rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  background: #f8fbff;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.result-quick-stats strong {
+  max-width: 108px;
+  overflow: hidden;
+  color: var(--color-text-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .result-tabs-head h3 {
@@ -650,7 +786,7 @@ onMounted(() => {
 
 .editor-textarea {
   width: 100%;
-  min-height: 188px;
+  min-height: 150px;
   padding: 1rem 1.05rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -660,6 +796,10 @@ onMounted(() => {
   line-height: 1.7;
   resize: vertical;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.input-card .editor-textarea {
+  min-height: 140px;
 }
 
 .editor-textarea:focus {
@@ -675,10 +815,33 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
+.input-card .action-row {
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.soft-action-btn {
+  min-height: 38px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  box-shadow: none;
+}
+
+.example-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background: #fbfdff;
+}
+
 .example-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
+  gap: 0.45rem;
   align-items: center;
 }
 
@@ -689,13 +852,14 @@ onMounted(() => {
 }
 
 .example-chip {
-  min-height: 38px;
-  padding: 0.55rem 0.9rem;
+  min-height: 32px;
+  padding: 0.38rem 0.7rem;
   border-radius: 999px;
   border: 1px solid #d6e0f5;
   background: #f7faff;
   color: var(--color-text-strong);
   font-weight: 700;
+  font-size: 0.86rem;
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -830,6 +994,13 @@ onMounted(() => {
   .result-tab-list {
     width: 100%;
     border-radius: var(--radius-lg);
+  }
+
+  .result-head-actions,
+  .result-quick-stats {
+    width: 100%;
+    justify-items: stretch;
+    justify-content: flex-start;
   }
 
   .result-tab-btn {

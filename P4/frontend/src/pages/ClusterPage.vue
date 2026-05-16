@@ -21,6 +21,8 @@ const error = ref("");
 const points = ref([]);
 const hasSubmitted = ref(false);
 const copyMessage = ref("");
+const clusterCost = ref(null);
+const activeClusterResultTab = ref("overview");
 
 function parseLinesToDocuments(text) {
   return text
@@ -175,6 +177,14 @@ function clearAll() {
   points.value = [];
   hasSubmitted.value = false;
   copyMessage.value = "";
+  clusterCost.value = null;
+}
+
+function formatCost(value) {
+  if (value === null || value === undefined) {
+    return "未记录";
+  }
+  return `${Math.round(Number(value))} ms`;
 }
 
 function buildClusterSummary() {
@@ -191,6 +201,44 @@ function buildClusterSummary() {
   ]
     .join("\n")
     .trim();
+}
+
+function buildClusterReportDescription() {
+  const documentTotal = points.value.length;
+  const groupTotal = clusterGroups.value.length;
+  const counts = clusterGroups.value.map((group) => group.count);
+  const isBalanced =
+    counts.length > 0 && Math.max(...counts) - Math.min(...counts) <= 1;
+  const distributionText =
+    clusterGroups.value.length > 0
+      ? clusterGroups.value
+          .map((group) => `簇 ${group.cluster} 包含 ${group.count} 篇文档`)
+          .join("，")
+      : "暂无可展示的簇分布";
+  const balanceText = isBalanced
+    ? "整体分布较为均衡"
+    : "不同簇之间的文档数量存在一定差异";
+
+  return `本次共输入 ${documentTotal} 篇文档，系统基于 TF-IDF 和 KMeans 将其划分为 ${groupTotal} 个簇，并通过 PCA 生成二维散点图。${distributionText}，${balanceText}。本次聚类耗时约 ${formatCost(
+    clusterCost.value,
+  )}。`;
+}
+
+async function writeTextToClipboard(textValue) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(textValue);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = textValue;
+  textarea.setAttribute("readonly", "readonly");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
 }
 
 async function copyClusterSummary() {
@@ -222,10 +270,25 @@ async function copyClusterSummary() {
   }
 }
 
+async function copyClusterReportDescription() {
+  if (!hasResults.value) {
+    copyMessage.value = "当前没有可复制的报告描述。";
+    return;
+  }
+
+  try {
+    await writeTextToClipboard(buildClusterReportDescription());
+    copyMessage.value = "报告描述已复制到剪贴板。";
+  } catch {
+    copyMessage.value = "复制失败，请稍后重试。";
+  }
+}
+
 async function handleCluster() {
   error.value = "";
   points.value = [];
   copyMessage.value = "";
+  clusterCost.value = null;
 
   let documents;
   try {
@@ -255,6 +318,7 @@ async function handleCluster() {
 
   hasSubmitted.value = true;
   loading.value = true;
+  const startTime = performance.now();
 
   try {
     const res = await clusterDocuments(documents, count);
@@ -262,6 +326,7 @@ async function handleCluster() {
   } catch (e) {
     error.value = e instanceof Error ? e.message : "聚类失败，请稍后重试。";
   } finally {
+    clusterCost.value = performance.now() - startTime;
     loading.value = false;
   }
 }
@@ -416,13 +481,69 @@ async function handleCluster() {
       <div class="result-layout">
         <ClusterChart :points="points" :loading="loading" />
 
-        <aside class="summary-card">
-          <div class="summary-head">
-            <h3>聚类摘要</h3>
-            <div class="summary-actions">
-              <span class="meta-pill">{{
-                hasResults ? `${points.length} 个点` : "等待结果"
-              }}</span>
+        <aside class="summary-card cluster-result-card">
+          <div class="summary-head cluster-result-head">
+            <div>
+              <h3>聚类解释</h3>
+              <p>通过概览、统计图和簇详情解释左侧散点图结果。</p>
+            </div>
+            <span class="meta-pill">{{ hasResults ? `${points.length} 个点` : "等待结果" }}</span>
+          </div>
+
+          <div class="cluster-result-tabs" role="tablist" aria-label="聚类解释">
+            <button
+              class="cluster-result-tab"
+              :class="{ active: activeClusterResultTab === 'overview' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeClusterResultTab === 'overview'"
+              @click="activeClusterResultTab = 'overview'"
+            >
+              结果概览
+            </button>
+            <button
+              class="cluster-result-tab"
+              :class="{ active: activeClusterResultTab === 'stats' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeClusterResultTab === 'stats'"
+              @click="activeClusterResultTab = 'stats'"
+            >
+              簇统计
+            </button>
+            <button
+              class="cluster-result-tab"
+              :class="{ active: activeClusterResultTab === 'detail' }"
+              type="button"
+              role="tab"
+              :aria-selected="activeClusterResultTab === 'detail'"
+              @click="activeClusterResultTab = 'detail'"
+            >
+              簇详情
+            </button>
+          </div>
+
+          <div
+            v-if="activeClusterResultTab === 'overview'"
+            class="cluster-result-panel"
+            role="tabpanel"
+          >
+            <div class="summary-stats">
+              <article class="overview-item">
+                <span>返回文档</span>
+                <strong>{{ points.length }}</strong>
+              </article>
+              <article class="overview-item">
+                <span>识别簇数</span>
+                <strong>{{ clusterGroups.length }}</strong>
+              </article>
+              <article class="overview-item">
+                <span>聚类耗时</span>
+                <strong>{{ formatCost(clusterCost) }}</strong>
+              </article>
+            </div>
+
+            <div class="summary-actions cluster-overview-actions">
               <button
                 class="summary-copy-btn"
                 type="button"
@@ -431,50 +552,61 @@ async function handleCluster() {
               >
                 复制聚类摘要
               </button>
+              <button
+                class="summary-copy-btn"
+                type="button"
+                :disabled="loading || !hasResults"
+                @click="copyClusterReportDescription"
+              >
+                复制报告描述
+              </button>
             </div>
+
+            <p v-if="!hasResults" class="summary-empty">
+              聚类完成后，这里会展示文档数量、簇数量、耗时和可复制的报告文本。
+            </p>
+            <p v-else class="summary-empty">
+              当前聚类结果已生成，可切换到“簇统计”查看数量分布，或切换到“簇详情”查看每个簇包含的文档标题。
+            </p>
+            <p v-if="hasResults && copyMessage" class="summary-copy-feedback">
+              {{ copyMessage }}
+            </p>
           </div>
 
-          <div class="summary-stats">
-            <article class="overview-item">
-              <span>返回文档</span>
-              <strong>{{ points.length }}</strong>
-            </article>
-            <article class="overview-item">
-              <span>识别簇数</span>
-              <strong>{{ clusterGroups.length }}</strong>
-            </article>
+          <div
+            v-else-if="activeClusterResultTab === 'stats'"
+            class="cluster-result-panel"
+            role="tabpanel"
+          >
+            <ClusterStatsChart :groups="clusterGroups" :loading="loading" />
           </div>
 
-          <ClusterStatsChart :groups="clusterGroups" :loading="loading" />
-
-          <p v-if="!hasResults" class="summary-empty">
-            聚类完成后，这里会列出每个簇包含的文档标题，便于报告中解释结果。
-          </p>
-          <p v-if="hasResults && copyMessage" class="summary-copy-feedback">
-            {{ copyMessage }}
-          </p>
-
-          <div v-if="hasResults" class="cluster-group-list">
-            <article
-              v-for="group in clusterGroups"
-              :key="group.cluster"
-              class="cluster-group-card"
-            >
-              <div class="cluster-group-head">
-                <div class="cluster-badge">
-                  <span
-                    class="cluster-dot"
-                    :style="{ backgroundColor: group.color }"
-                  />
-                  <strong>簇 {{ group.cluster }}</strong>
+          <div v-else class="cluster-result-panel" role="tabpanel">
+            <p v-if="!hasResults" class="summary-empty">
+              聚类完成后，这里会列出每个簇包含的文档标题。
+            </p>
+            <div v-else class="cluster-group-list">
+              <article
+                v-for="group in clusterGroups"
+                :key="group.cluster"
+                class="cluster-group-card"
+              >
+                <div class="cluster-group-head">
+                  <div class="cluster-badge">
+                    <span
+                      class="cluster-dot"
+                      :style="{ backgroundColor: group.color }"
+                    />
+                    <strong>簇 {{ group.cluster }}</strong>
+                  </div>
+                  <span>{{ group.count }} 篇文档</span>
                 </div>
-                <span>{{ group.count }} 篇文档</span>
-              </div>
 
-              <ul class="cluster-title-list">
-                <li v-for="title in group.titles" :key="title">{{ title }}</li>
-              </ul>
-            </article>
+                <ul class="cluster-title-list">
+                  <li v-for="title in group.titles" :key="title">{{ title }}</li>
+                </ul>
+              </article>
+            </div>
           </div>
         </aside>
       </div>
@@ -790,11 +922,65 @@ async function handleCluster() {
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
 }
 
+.cluster-result-card {
+  align-self: stretch;
+}
+
 .summary-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+}
+
+.cluster-result-head {
+  align-items: flex-start;
+}
+
+.cluster-result-head p {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.cluster-result-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  background: #f6f8fb;
+}
+
+.cluster-result-tab {
+  min-height: 36px;
+  padding: 0.5rem 0.72rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.cluster-result-tab.active {
+  background: #ffffff;
+  color: var(--color-accent-strong);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.cluster-result-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cluster-overview-actions {
+  justify-content: flex-start;
 }
 
 .summary-actions {
@@ -930,6 +1116,11 @@ async function handleCluster() {
   .section-head,
   .summary-head {
     flex-direction: column;
+  }
+
+  .cluster-result-tabs {
+    grid-template-columns: 1fr;
+    border-radius: var(--radius-lg);
   }
 
   .summary-actions,
