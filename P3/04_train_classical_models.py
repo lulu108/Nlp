@@ -300,9 +300,7 @@ def train_select_and_test(
         )
     else:
         raise ValueError(f"未知模型名: {model_name}")
-
     final_model.fit(X_train_dev, y_train_dev)
-
     # 3. test 最终评估
     y_test_pred = final_model.predict(X_test)
     test_metrics = evaluate(y_test, y_test_pred)

@@ -273,7 +273,7 @@ Invoke-RestMethod http://localhost:5000/api/meta | ConvertTo-Json -Depth 10
 - 当前 Python 解释器路径
 - 当前项目根目录
 
-如果这里返回的不是你正在开发的 `P4` 路径，说明 `5000` 端口上仍然挂着旧服务。
+如果这里返回的不是 正在开发的 `P4` 路径，说明 `5000` 端口上仍然挂着旧服务。
 
 ---
 

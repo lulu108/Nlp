@@ -33,6 +33,7 @@ CLASS_DISTRIBUTION_OUT = OUTPUT_DIR / "class_distribution.png"
 MODEL_COMPARISON_OUT = OUTPUT_DIR / "model_comparison.png"
 SVM_CM_OUT = OUTPUT_DIR / "svm_confusion_matrix.png"
 MULTILABEL_F1_OUT = OUTPUT_DIR / "multilabel_label_f1.png"
+MULTILABEL_LABEL_NUMBER_OUT = OUTPUT_DIR / "multilabel_label_number_distribution.png"
 
 LABELS = ["体育", "科技", "财经", "教育"]
 MODEL_ORDER = ["NB", "LR", "SVM"]
@@ -187,6 +188,47 @@ def plot_multilabel_label_f1() -> Path | None:
     return MULTILABEL_F1_OUT
 
 
+def parse_multilabel_label_number_counts(report_text: str) -> dict[str, int]:
+    """从多标签报告中解析单/双/三/四标签样本数。"""
+    label_number_names = ["单标签", "双标签", "三标签", "四标签"]
+    counts: dict[str, int] = {}
+    for name in label_number_names:
+        pattern = rf"^\s*{name}样本数:\s*(\d+)"
+        match = re.search(pattern, report_text, flags=re.MULTILINE)
+        if match:
+            counts[name] = int(match.group(1))
+    return counts
+
+
+def plot_multilabel_label_number_distribution() -> Path | None:
+    """生成图 3-5：多标签样本标签数量分布。"""
+    if not MULTILABEL_REPORT_PATH.exists():
+        print(f"[跳过] 未找到多标签分类报告：{MULTILABEL_REPORT_PATH}")
+        return None
+
+    report_text = MULTILABEL_REPORT_PATH.read_text(encoding="utf-8-sig")
+    counts = parse_multilabel_label_number_counts(report_text)
+    label_number_names = ["单标签", "双标签", "三标签", "四标签"]
+    missing_names = [name for name in label_number_names if name not in counts]
+    if missing_names:
+        print(f"[跳过] 多标签报告中未解析到以下样本数：{missing_names}")
+        return None
+
+    values = [counts[name] for name in label_number_names]
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    bars = ax.bar(label_number_names, values, color="#B279A2")
+    ax.set_xlabel("标签数量类型")
+    ax.set_ylabel("样本数量")
+    ax.set_title("图 3-5 多标签样本标签数量分布")
+    ax.set_ylim(0, max(values) * 1.15 if values else 1)
+    add_bar_labels(ax, bars, "{:.0f}")
+    fig.tight_layout()
+    fig.savefig(MULTILABEL_LABEL_NUMBER_OUT, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return MULTILABEL_LABEL_NUMBER_OUT
+
+
 def main() -> None:
     setup_matplotlib()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -197,6 +239,7 @@ def main() -> None:
         plot_model_comparison(),
         copy_svm_confusion_matrix(),
         plot_multilabel_label_f1(),
+        plot_multilabel_label_number_distribution(),
     ):
         if path is not None:
             generated_paths.append(path)
