@@ -392,12 +392,12 @@ onBeforeUnmount(() => {
 
 .chart-canvas {
   width: 100%;
-  height: 340px;
+  height: 300px;
 }
 
 .mini-empty {
   display: grid;
-  min-height: 340px;
+  min-height: 300px;
   place-items: center;
   text-align: center;
 }
@@ -419,8 +419,8 @@ onBeforeUnmount(() => {
 
   .chart-canvas,
   .mini-empty {
-    height: 300px;
-    min-height: 300px;
+    height: 280px;
+    min-height: 280px;
   }
 }
 </style>

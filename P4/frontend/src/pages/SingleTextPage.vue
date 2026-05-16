@@ -43,6 +43,7 @@ const entities = ref([]);
 const label = ref("");
 const confidence = ref(null);
 const hasSubmitted = ref(false);
+const activeResultTab = ref("overview");
 const copyMessage = ref("");
 const backendStatus = ref({
   online: false,
@@ -250,53 +251,38 @@ onMounted(() => {
       </div>
     </header>
 
-    <section class="workspace-card">
-      <div class="section-head">
-        <div>
-          <h3>后端状态</h3>
-          <p>用于课堂演示快速确认服务连通性与当前 NER 运行路径。</p>
-        </div>
-      </div>
-
-      <div class="backend-status-row">
-        <article class="backend-status-item">
+    <section class="backend-status-bar">
+      <div class="backend-status-main">
+        <div class="backend-status-chip">
           <span>服务状态</span>
           <strong :class="backendStatus.online ? 'status-ok' : 'status-down'">
             {{ backendStatus.online ? "在线" : "离线" }}
           </strong>
-        </article>
-        <article class="backend-status-item">
-          <span>后端地址</span>
-          <strong>{{ backendBaseUrl }}</strong>
-        </article>
-        <article class="backend-status-item">
-          <span>服务名称</span>
-          <strong>{{ backendStatus.service }}</strong>
-        </article>
-        <article class="backend-status-item">
+        </div>
+        <div class="backend-status-chip">
           <span>NER 路径</span>
           <strong>{{ backendStatus.lastUsedPath }}</strong>
-        </article>
+        </div>
+        <div class="backend-status-chip">
+          <span>后端地址</span>
+          <strong>{{ backendBaseUrl }}</strong>
+        </div>
       </div>
 
-      <div class="action-row">
-        <button
-          class="ghost-btn"
-          type="button"
-          :disabled="backendStatusLoading"
-          @click="refreshBackendStatus"
-        >
-          {{ backendStatusLoading ? "刷新中..." : "刷新状态" }}
-        </button>
-      </div>
+      <button
+        class="ghost-btn backend-refresh-btn"
+        type="button"
+        :disabled="backendStatusLoading"
+        @click="refreshBackendStatus"
+      >
+        {{ backendStatusLoading ? "刷新中..." : "刷新状态" }}
+      </button>
 
       <p v-if="backendStatus.error" class="status-text status-text-error">
         后端连接失败：{{ backendStatus.error }}
       </p>
-      <p v-else class="status-text">
-        已加载 /api/meta 状态信息，不影响下方文本分析流程。
-      </p>
     </section>
+
 
     <section class="workspace-card">
       <div class="section-head">
@@ -345,68 +331,111 @@ onMounted(() => {
       <p v-if="copyMessage" class="copy-feedback">{{ copyMessage }}</p>
     </section>
 
-    <section class="workspace-card">
-      <div class="section-head">
+    <section class="workspace-card result-tabs-card">
+      <div class="result-tabs-head">
         <div>
-          <h3>结果概览</h3>
-          <p>先看总体状态，再查看下方三张结果卡片。</p>
+          <h3>分析结果</h3>
+          <p>将概览、可视化和详细结果集中在同一卡片中，便于演示和截图。</p>
+        </div>
+
+        <div class="result-tab-list" role="tablist" aria-label="分析结果">
+          <button
+            class="result-tab-btn"
+            :class="{ active: activeResultTab === 'overview' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeResultTab === 'overview'"
+            @click="activeResultTab = 'overview'"
+          >
+            结果概览
+          </button>
+          <button
+            class="result-tab-btn"
+            :class="{ active: activeResultTab === 'visualization' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeResultTab === 'visualization'"
+            @click="activeResultTab = 'visualization'"
+          >
+            结果可视化
+          </button>
+          <button
+            class="result-tab-btn"
+            :class="{ active: activeResultTab === 'detail' }"
+            type="button"
+            role="tab"
+            :aria-selected="activeResultTab === 'detail'"
+            @click="activeResultTab = 'detail'"
+          >
+            结果详情
+          </button>
         </div>
       </div>
 
-      <div class="overview-grid">
-        <article class="overview-item">
-          <span>分词数量</span>
-          <strong>{{ tokenCount }}</strong>
-        </article>
-        <article class="overview-item">
-          <span>实体数量</span>
-          <strong>{{ entityCount }}</strong>
-        </article>
-        <article class="overview-item">
-          <span>分类标签</span>
-          <strong>{{ label || "待返回" }}</strong>
-        </article>
+      <div v-if="activeResultTab === 'overview'" class="result-tab-panel" role="tabpanel">
+        <div class="overview-grid">
+          <article class="overview-item">
+            <span>分词数量</span>
+            <strong>{{ tokenCount }}</strong>
+          </article>
+          <article class="overview-item">
+            <span>实体数量</span>
+            <strong>{{ entityCount }}</strong>
+          </article>
+          <article class="overview-item">
+            <span>分类标签</span>
+            <strong>{{ label || "待返回" }}</strong>
+          </article>
+        </div>
+
+        <div
+          v-if="error"
+          class="status-banner status-error"
+          role="alert"
+        >
+          {{ error }}
+        </div>
+        <div v-else-if="loading" class="status-banner status-loading">
+          正在调用后端接口并汇总三类结果，请稍候。
+        </div>
+        <div v-else-if="hasSubmitted && !hasResults" class="status-banner status-empty">
+          本次请求已完成，但暂未返回可展示结果。
+        </div>
+        <div v-else class="status-banner status-neutral">
+          输入文本后可以在本卡片中切换查看分词、实体识别、文本分类和可视化统计。
+        </div>
       </div>
 
       <div
-        v-if="error"
-        class="status-banner status-error"
-        role="alert"
+        v-else-if="activeResultTab === 'visualization'"
+        class="result-tab-panel"
+        role="tabpanel"
       >
-        {{ error }}
+        <TextStatsCharts
+          :tokens="tokens"
+          :entities="entities"
+          :loading="loading"
+          :ready="hasSubmitted"
+        />
       </div>
-      <div v-else-if="loading" class="status-banner status-loading">
-        正在调用后端接口并汇总三类结果，请稍候。
-      </div>
-      <div v-else-if="hasSubmitted && !hasResults" class="status-banner status-empty">
-        本次请求已完成，但暂未返回可展示结果。
-      </div>
-      <div v-else class="status-banner status-neutral">
-        输入文本后可以在下方同时查看分词、实体识别和文本分类结果。
-      </div>
-    </section>
 
-    <TextStatsCharts
-      :tokens="tokens"
-      :entities="entities"
-      :loading="loading"
-      :ready="hasSubmitted"
-    />
-
-    <section class="result-grid">
-      <TokenResultCard :tokens="tokens" :loading="loading" :ready="hasSubmitted" />
-      <NerResultCard
-        :entities="entities"
-        :source-text="trimmedText"
-        :loading="loading"
-        :ready="hasSubmitted"
-      />
-      <ClassifyResultCard
-        :label="label"
-        :confidence="confidence"
-        :loading="loading"
-        :ready="hasSubmitted"
-      />
+      <div v-else class="result-tab-panel" role="tabpanel">
+        <section class="result-grid">
+          <TokenResultCard :tokens="tokens" :loading="loading" :ready="hasSubmitted" />
+          <NerResultCard
+            :entities="entities"
+            :source-text="trimmedText"
+            :loading="loading"
+            :ready="hasSubmitted"
+          />
+          <ClassifyResultCard
+            :label="label"
+            :confidence="confidence"
+            :loading="loading"
+            :ready="hasSubmitted"
+          />
+        </section>
+      </div>
     </section>
   </section>
 </template>
@@ -478,6 +507,116 @@ onMounted(() => {
   border-radius: var(--radius-xl);
   background: var(--color-surface);
   box-shadow: var(--shadow-soft);
+}
+
+.backend-status-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.backend-status-main {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.5fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.backend-status-chip {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  background: #f8fbff;
+  border: 1px solid var(--color-border-soft);
+}
+
+.backend-status-chip span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.backend-status-chip strong {
+  min-width: 0;
+  color: var(--color-text-strong);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backend-refresh-btn {
+  min-height: 36px;
+  padding: 0.52rem 0.85rem;
+}
+
+.result-tabs-card {
+  gap: var(--space-4);
+}
+
+.result-tabs-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.result-tabs-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--color-text-strong);
+}
+
+.result-tabs-head p {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+
+.result-tab-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  background: #f6f8fb;
+}
+
+.result-tab-btn {
+  min-height: 36px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.result-tab-btn.active {
+  background: #ffffff;
+  color: var(--color-accent-strong);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.result-tab-panel {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .section-head {
@@ -582,32 +721,6 @@ onMounted(() => {
   font-size: 0.92rem;
 }
 
-.backend-status-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.backend-status-item {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-soft);
-  background: #f8fbff;
-}
-
-.backend-status-item span {
-  color: var(--color-text-muted);
-  font-size: 0.84rem;
-}
-
-.backend-status-item strong {
-  color: var(--color-text-strong);
-  font-size: 0.95rem;
-  word-break: break-word;
-}
-
 .status-ok {
   color: #067647;
 }
@@ -698,7 +811,8 @@ onMounted(() => {
   .page-hero,
   .result-grid,
   .overview-grid,
-  .backend-status-row {
+  .backend-status-bar,
+  .backend-status-main {
     grid-template-columns: 1fr;
   }
 }
@@ -708,8 +822,26 @@ onMounted(() => {
     padding: var(--space-4);
   }
 
-  .section-head {
+  .section-head,
+  .result-tabs-head {
     flex-direction: column;
+  }
+
+  .result-tab-list {
+    width: 100%;
+    border-radius: var(--radius-lg);
+  }
+
+  .result-tab-btn {
+    flex: 1 1 auto;
+  }
+
+  .backend-status-bar {
+    padding: var(--space-3);
+  }
+
+  .backend-status-chip {
+    border-radius: var(--radius-lg);
   }
 
   .page-hero-copy h2 {

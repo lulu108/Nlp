@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { clusterDocuments } from "../api/nlp";
 import ClusterChart from "../components/ClusterChart.vue";
+import ClusterStatsChart from "../components/ClusterStatsChart.vue";
 import { getClusterColor } from "../constants/clusterPalette";
 
 const SAMPLE_INPUT = [
@@ -443,6 +444,8 @@ async function handleCluster() {
               <strong>{{ clusterGroups.length }}</strong>
             </article>
           </div>
+
+          <ClusterStatsChart :groups="clusterGroups" :loading="loading" />
 
           <p v-if="!hasResults" class="summary-empty">
             聚类完成后，这里会列出每个簇包含的文档标题，便于报告中解释结果。
