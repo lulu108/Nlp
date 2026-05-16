@@ -23,6 +23,7 @@ const hasSubmitted = ref(false);
 const copyMessage = ref("");
 const clusterCost = ref(null);
 const activeClusterResultTab = ref("scatter");
+const showDocumentPreview = ref(false);
 
 function parseLinesToDocuments(text) {
   return text
@@ -156,6 +157,7 @@ async function handleTxtFilesChange(event) {
     hasSubmitted.value = false;
     error.value = "";
     copyMessage.value = "";
+    showDocumentPreview.value = false;
   } catch (e) {
     error.value = e instanceof Error ? e.message : "读取文件失败，请稍后重试。";
   } finally {
@@ -168,6 +170,7 @@ function fillExample() {
   clusterCount.value = "3";
   error.value = "";
   copyMessage.value = "";
+  showDocumentPreview.value = false;
 }
 
 function clearAll() {
@@ -178,6 +181,7 @@ function clearAll() {
   hasSubmitted.value = false;
   copyMessage.value = "";
   clusterCost.value = null;
+  showDocumentPreview.value = false;
 }
 
 function formatCost(value) {
@@ -323,6 +327,7 @@ async function handleCluster() {
   try {
     const res = await clusterDocuments(documents, count);
     points.value = res?.points || [];
+    activeClusterResultTab.value = "scatter";
   } catch (e) {
     error.value = e instanceof Error ? e.message : "聚类失败，请稍后重试。";
   } finally {
@@ -336,7 +341,7 @@ async function handleCluster() {
   <section class="page-stack">
     <header class="page-hero">
       <div class="page-hero-copy">
-        <p class="section-kicker">Document Clustering</p>
+        <p class="section-kicker">Clustering</p>
         <h2>聚类分析</h2>
         <p>
           输入多条文档后，系统将返回二维聚类散点图，帮助观察不同文本在主题上的分布情况，
@@ -408,15 +413,25 @@ async function handleCluster() {
 
       <div class="preview-block">
         <div class="preview-head">
-          <h4>文档预览表</h4>
-          <span class="meta-pill">{{ previewRows.length }} 条</span>
+          <div>
+            <h4>文档预览</h4>
+            <p>已解析 {{ previewRows.length }} 条文档</p>
+          </div>
+          <button
+            class="preview-toggle-btn"
+            type="button"
+            :disabled="previewRows.length === 0"
+            @click="showDocumentPreview = !showDocumentPreview"
+          >
+            {{ showDocumentPreview ? "收起" : "展开" }}
+          </button>
         </div>
 
         <div v-if="previewRows.length === 0" class="preview-empty">
-          按“标题::内容”格式输入后，这里会自动展示解析出的标题和正文摘要。
+          按“标题::内容”输入后，这里会显示解析结果。
         </div>
 
-        <div v-else class="preview-table-wrap">
+        <div v-else-if="showDocumentPreview" class="preview-table-wrap">
           <table class="preview-table">
             <thead>
               <tr>
@@ -428,7 +443,7 @@ async function handleCluster() {
             <tbody>
               <tr
                 v-for="row in previewRows"
-                :key="`${row.title}-${row.summary}`"
+                :key="row.title + '-' + row.summary"
               >
                 <td>{{ row.index }}</td>
                 <td>{{ row.title }}</td>
@@ -586,6 +601,14 @@ async function handleCluster() {
           <p v-if="hasResults && copyMessage" class="summary-copy-feedback">
             {{ copyMessage }}
           </p>
+
+          <article v-if="hasResults" class="report-preview-card">
+            <div class="report-preview-head">
+              <h4>报告描述预览</h4>
+              <span>{{ formatCost(clusterCost) }}</span>
+            </div>
+            <p>{{ buildClusterReportDescription() }}</p>
+          </article>
         </div>
 
         <div
@@ -848,6 +871,29 @@ async function handleCluster() {
   font-size: 1rem;
 }
 
+.preview-head p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.preview-toggle-btn {
+  min-height: 36px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #d3dfff;
+  background: #eef4ff;
+  color: var(--color-accent-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.preview-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .preview-empty {
   padding: 0.9rem 1rem;
   border-radius: var(--radius-lg);
@@ -960,7 +1006,7 @@ async function handleCluster() {
 
 .cluster-result-tab {
   min-height: 36px;
-  padding: 0.5rem 0.72rem;
+  padding: 0.5rem 0.9rem;
   border-radius: 999px;
   background: transparent;
   color: var(--color-text-muted);
@@ -982,6 +1028,40 @@ async function handleCluster() {
 .cluster-result-panel {
   display: grid;
   gap: var(--space-4);
+}
+
+.report-preview-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background: #fbfdff;
+}
+
+.report-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.report-preview-head h4 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 0.98rem;
+}
+
+.report-preview-head span {
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.report-preview-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
 }
 
 .cluster-overview-actions {

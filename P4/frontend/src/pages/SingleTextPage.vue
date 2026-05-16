@@ -267,6 +267,7 @@ async function handleAnalyze() {
     entities.value = nerRes?.entities || [];
     label.value = classifyRes?.label || "";
     confidence.value = classifyRes?.confidence ?? null;
+    activeResultTab.value = "overview";
   } catch (e) {
     error.value = e instanceof Error ? e.message : "分析失败，请稍后重试。";
   } finally {
@@ -307,7 +308,7 @@ onMounted(() => {
   <section class="page-stack">
     <header class="page-hero">
       <div class="page-hero-copy">
-        <p class="section-kicker">Single Text Workflow</p>
+        <p class="section-kicker">Single Text</p>
         <h2>单文本分析</h2>
         <p>
           输入一段中文文本，系统将同时返回分词结果、命名实体识别结果以及文本分类结果，
@@ -500,6 +501,14 @@ onMounted(() => {
         <div v-else class="status-banner status-neutral">
           输入文本后可以在本卡片中切换查看分词、实体识别、文本分类和可视化统计。
         </div>
+
+        <article v-if="hasResults" class="report-preview-card">
+          <div class="report-preview-head">
+            <h4>报告描述预览</h4>
+            <span>{{ formatCost(analysisCost) }}</span>
+          </div>
+          <p>{{ buildAnalysisReportDescription() }}</p>
+        </article>
       </div>
 
       <div
@@ -753,6 +762,40 @@ onMounted(() => {
 .result-tab-panel {
   display: grid;
   gap: var(--space-4);
+}
+
+.report-preview-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background: #fbfdff;
+}
+
+.report-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.report-preview-head h4 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 0.98rem;
+}
+
+.report-preview-head span {
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.report-preview-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
 }
 
 .section-head {
